@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tasks     Task[]
+
+  @@map("users")
+}
+
+model Task {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  quadrant    Quadrant    @default(backlog)
+  positionX   Float?      @map("position_x")
+  positionY   Float?      @map("position_y")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  userId      String      @map("user_id")
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenshots Screenshot[]
+
+  @@map("tasks")
+}
+
+model Screenshot {
+  id        String   @id @default(uuid())
+  filename  String
+  path      String
+  taskId    String   @map("task_id")
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("screenshots")
+}
+
+enum Quadrant {
+  do_first
+  schedule
+  delegate
+  eliminate
+  backlog
+}
