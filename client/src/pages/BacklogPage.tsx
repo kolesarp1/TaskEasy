@@ -22,32 +22,32 @@ const QUADRANT_ORDER: Quadrant[] = ['do_first', 'schedule', 'delegate', 'elimina
 
 const quadrantStyles: Record<Quadrant, { bg: string; border: string; text: string; headerBg: string; itemBg: string }> = {
   do_first: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-800',
-    headerBg: 'bg-red-100',
-    itemBg: 'bg-red-100 hover:bg-red-200',
-  },
-  schedule: {
     bg: 'bg-green-50',
-    border: 'border-green-200',
+    border: 'border-green-300',
     text: 'text-green-800',
     headerBg: 'bg-green-100',
     itemBg: 'bg-green-100 hover:bg-green-200',
   },
+  schedule: {
+    bg: 'bg-cyan-50',
+    border: 'border-cyan-300',
+    text: 'text-cyan-800',
+    headerBg: 'bg-cyan-100',
+    itemBg: 'bg-cyan-100 hover:bg-cyan-200',
+  },
   delegate: {
-    bg: 'bg-purple-50',
-    border: 'border-purple-200',
-    text: 'text-purple-800',
-    headerBg: 'bg-purple-100',
-    itemBg: 'bg-purple-100 hover:bg-purple-200',
+    bg: 'bg-red-50',
+    border: 'border-red-300',
+    text: 'text-red-800',
+    headerBg: 'bg-red-100',
+    itemBg: 'bg-red-100 hover:bg-red-200',
   },
   eliminate: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-800',
-    headerBg: 'bg-amber-100',
-    itemBg: 'bg-amber-100 hover:bg-amber-200',
+    bg: 'bg-gray-100',
+    border: 'border-gray-300',
+    text: 'text-gray-700',
+    headerBg: 'bg-gray-200',
+    itemBg: 'bg-gray-200 hover:bg-gray-300',
   },
   backlog: {
     bg: 'bg-gray-50',
@@ -115,7 +115,8 @@ function QuadrantSection({ quadrant, tasks, onOpenPanel }: QuadrantSectionProps)
 
   const getQuadrantLabel = (q: Quadrant) => {
     if (q === 'backlog') return 'Backlog';
-    return QUADRANT_INFO[q]?.label || q;
+    const info = QUADRANT_INFO[q];
+    return info ? info.label : q;
   };
 
   return (

@@ -27,24 +27,28 @@ export interface User {
   createdAt?: string;
 }
 
-export const QUADRANT_INFO: Record<Exclude<Quadrant, 'backlog'>, { label: string; description: string; color: string }> = {
+export const QUADRANT_INFO: Record<Exclude<Quadrant, 'backlog'>, { label: string; subtitle: string; description: string; color: string }> = {
   do_first: {
-    label: 'Do First',
+    label: 'Do',
+    subtitle: 'Do it now.',
     description: 'Urgent & Important',
     color: 'do-first',
   },
   schedule: {
-    label: 'Schedule',
+    label: 'Decide',
+    subtitle: 'Schedule a time to do it.',
     description: 'Not Urgent & Important',
     color: 'schedule',
   },
   delegate: {
     label: 'Delegate',
+    subtitle: 'Who can do it for you?',
     description: 'Urgent & Not Important',
     color: 'delegate',
   },
   eliminate: {
-    label: 'Eliminate',
+    label: 'Delete',
+    subtitle: 'Eliminate it.',
     description: 'Not Urgent & Not Important',
     color: 'eliminate',
   },

@@ -13,30 +13,38 @@ interface QuadrantProps {
 }
 
 // Shared color map for quadrants - export for use in other components
-export const quadrantColorMap: Record<string, { bg: string; inputBg: string; label: string; border: string }> = {
+export const quadrantColorMap: Record<string, { bg: string; inputBg: string; label: string; border: string; cardBg: string; cardBorder: string }> = {
   'do-first': {
-    bg: 'bg-red-100',
-    inputBg: 'bg-red-200',
-    label: 'text-red-800',
-    border: 'border-red-300',
-  },
-  schedule: {
     bg: 'bg-green-100',
     inputBg: 'bg-green-200',
-    label: 'text-green-800',
-    border: 'border-green-300',
+    label: 'text-green-700',
+    border: 'border-green-400',
+    cardBg: 'bg-green-200',
+    cardBorder: 'border-green-400',
+  },
+  schedule: {
+    bg: 'bg-cyan-100',
+    inputBg: 'bg-cyan-200',
+    label: 'text-cyan-700',
+    border: 'border-cyan-400',
+    cardBg: 'bg-cyan-200',
+    cardBorder: 'border-cyan-400',
   },
   delegate: {
-    bg: 'bg-purple-100',
-    inputBg: 'bg-purple-200',
-    label: 'text-purple-800',
-    border: 'border-purple-300',
+    bg: 'bg-red-100',
+    inputBg: 'bg-red-200',
+    label: 'text-red-700',
+    border: 'border-red-400',
+    cardBg: 'bg-red-200',
+    cardBorder: 'border-red-400',
   },
   eliminate: {
-    bg: 'bg-amber-100',
-    inputBg: 'bg-amber-200',
-    label: 'text-amber-800',
-    border: 'border-amber-300',
+    bg: 'bg-gray-200',
+    inputBg: 'bg-gray-300',
+    label: 'text-gray-600',
+    border: 'border-gray-400',
+    cardBg: 'bg-gray-300',
+    cardBorder: 'border-gray-400',
   },
 };
 
@@ -112,17 +120,15 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: Quadra
       `}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Quadrant label - large watermark style like reference */}
-      <div className="absolute inset-0 flex items-end justify-start p-4 pointer-events-none">
-        <div className={`${colorClasses.label} opacity-20`}>
-          <span className="text-4xl font-black uppercase tracking-tight leading-none">
-            {info.label.split(' ')[0]}
+      {/* Quadrant label - centered like reference image */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className={`${colorClasses.label} text-center`}>
+          <span className="block text-5xl font-black uppercase tracking-tight leading-none opacity-40">
+            {info.label}
           </span>
-          {info.label.split(' ')[1] && (
-            <span className="block text-4xl font-black uppercase tracking-tight leading-none">
-              {info.label.split(' ')[1]}
-            </span>
-          )}
+          <span className="block text-sm font-medium mt-2 opacity-30">
+            {info.subtitle}
+          </span>
         </div>
       </div>
 
