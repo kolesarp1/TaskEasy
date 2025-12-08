@@ -149,19 +149,6 @@ export function Layout() {
         </div>
       )}
 
-      {/* Guest indicator dot on matrix page */}
-      {isGuest && !user && isMatrixPage && (
-        <div className="fixed top-4 left-4 z-50">
-          <Link
-            to="/auth"
-            className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
-          >
-            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-            Guest Mode
-          </Link>
-        </div>
-      )}
-
       <main className="h-full w-full">
         <Outlet />
       </main>
