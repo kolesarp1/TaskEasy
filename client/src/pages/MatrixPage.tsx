@@ -297,7 +297,10 @@ export function MatrixPage() {
         positionY: newPosY,
       });
 
-      cleanup();
+      // Wait for React to process the state update before hiding overlay
+      requestAnimationFrame(() => {
+        cleanup();
+      });
     },
     [tasks, updateTask, deleteTask, completeTask]
   );
