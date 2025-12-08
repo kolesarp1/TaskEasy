@@ -173,12 +173,6 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef, activeTa
         )}
       </div>
 
-      {/* Empty state hint */}
-      {tasks.length === 0 && !isCreating && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="text-gray-500 text-sm opacity-60">Double-click to add</p>
-        </div>
-      )}
     </div>
   );
 }

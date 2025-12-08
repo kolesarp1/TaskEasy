@@ -30,7 +30,6 @@ function TrashDropZone({ isOver }: { isOver: boolean }) {
   return (
     <div
       className={`
-        fixed bottom-4 left-1/2 -translate-x-1/2 z-40
         flex items-center gap-2 px-6 py-3 rounded-full
         transition-all duration-200 shadow-lg
         ${isOver
@@ -54,7 +53,10 @@ function TrashDroppable({ children }: { children: (isOver: boolean) => React.Rea
   });
 
   return (
-    <div ref={setNodeRef}>
+    <div
+      ref={setNodeRef}
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40"
+    >
       {children(isOver)}
     </div>
   );
@@ -337,23 +339,6 @@ export function MatrixPage() {
                 activeTaskId={activeTask?.id}
               />
             </div>
-
-            {/* Bottom axis label - NOT URGENT */}
-            <div className="h-8 flex-shrink-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                Not Urgent
-              </span>
-            </div>
-          </div>
-
-          {/* Right axis label - NOT IMPORTANT */}
-          <div className="w-8 flex-shrink-0 flex items-center justify-center">
-            <span
-              className="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap"
-              style={{ writingMode: 'vertical-rl' }}
-            >
-              Not Important
-            </span>
           </div>
         </div>
 
