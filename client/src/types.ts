@@ -19,6 +19,7 @@ export interface Task {
   updatedAt: string;
   userId: string;
   screenshots: Screenshot[];
+  completedAt?: string | null;
 }
 
 export interface User {

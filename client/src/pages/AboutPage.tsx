@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCircle2, Calendar, Users, Trash2 } from 'lucide-react';
 
 export function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="h-full overflow-auto bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <Link
           to="/"
@@ -171,7 +171,7 @@ export function AboutPage() {
           </p>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 pb-8 text-center">
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"

@@ -27,6 +27,7 @@ interface TaskContextType {
     }>
   ) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
+  completeTask: (id: string) => Promise<void>;
   mergeTasks: (taskIds: string[], title?: string) => Promise<Task>;
   toggleTaskSelection: (id: string) => void;
   clearSelection: () => void;
@@ -175,6 +176,25 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const completeTask = async (id: string) => {
+    const now = new Date().toISOString();
+    if (isGuest && !user) {
+      setTasks((prev) => {
+        const updated = prev.map((t) =>
+          t.id === id ? { ...t, completedAt: now, updatedAt: now } : t
+        );
+        saveGuestTasks(updated);
+        return updated;
+      });
+      return;
+    }
+    // For API users, we'll update the task with completedAt
+    // Since the API might not support completedAt yet, we handle it locally
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, completedAt: now, updatedAt: now } : t))
+    );
+  };
+
   const mergeTasks = async (taskIds: string[], title?: string) => {
     if (isGuest && !user) {
       const tasksToMerge = tasks.filter((t) => taskIds.includes(t.id));
@@ -304,6 +324,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         createTask,
         updateTask,
         deleteTask,
+        completeTask,
         mergeTasks,
         toggleTaskSelection,
         clearSelection,

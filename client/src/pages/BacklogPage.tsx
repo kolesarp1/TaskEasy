@@ -12,7 +12,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
-import { Plus, GripVertical } from 'lucide-react';
+import { Plus, GripVertical, CheckCircle2 } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 import { TaskDetailPanel } from '../components/TaskDetailPanel';
 import { QUADRANT_INFO } from '../types';
@@ -90,6 +90,63 @@ function TaskLineItem({ task, onOpenPanel }: TaskLineItemProps) {
     >
       <GripVertical size={14} className="text-gray-400 flex-shrink-0" />
       <span className={`text-sm ${styles.text} flex-1 truncate`}>{task.title}</span>
+    </div>
+  );
+}
+
+interface CompletedTaskItemProps {
+  task: Task;
+  onOpenPanel: () => void;
+}
+
+function CompletedTaskItem({ task, onOpenPanel }: CompletedTaskItemProps) {
+  const completedDate = task.completedAt ? new Date(task.completedAt) : new Date();
+  const formattedDate = completedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2 rounded bg-green-50 hover:bg-green-100 cursor-pointer transition-colors"
+      onClick={onOpenPanel}
+    >
+      <CheckCircle2 size={14} className="text-green-500 flex-shrink-0" />
+      <span className="text-sm text-gray-500 flex-1 truncate line-through">{task.title}</span>
+      <span className="text-xs text-gray-400">{formattedDate}</span>
+    </div>
+  );
+}
+
+interface CompletedSectionProps {
+  tasks: Task[];
+  onOpenPanel: (task: Task) => void;
+}
+
+function CompletedSection({ tasks, onOpenPanel }: CompletedSectionProps) {
+  if (tasks.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-green-200 overflow-hidden">
+      <div className="px-4 py-2 bg-green-100">
+        <h3 className="font-semibold text-green-800 text-sm">
+          Done
+          <span className="ml-2 font-normal opacity-70">
+            ({tasks.length})
+          </span>
+        </h3>
+      </div>
+      <div className="p-2 bg-green-50 min-h-[60px]">
+        <div className="space-y-1">
+          {tasks.map((task) => (
+            <CompletedTaskItem
+              key={task.id}
+              task={task}
+              onOpenPanel={() => onOpenPanel(task)}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -265,7 +322,8 @@ export function BacklogPage() {
       backlog: [],
     };
 
-    tasks.forEach((task) => {
+    // Only include non-completed tasks
+    tasks.filter((t) => !t.completedAt).forEach((task) => {
       if (grouped[task.quadrant]) {
         grouped[task.quadrant].push(task);
       }
@@ -280,6 +338,26 @@ export function BacklogPage() {
 
     return grouped;
   }, [tasks]);
+
+  // Get completed tasks from the past 14 days
+  const completedTasks = useMemo(() => {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    return tasks
+      .filter((t) => {
+        if (!t.completedAt) return false;
+        const completedDate = new Date(t.completedAt);
+        return completedDate >= fourteenDaysAgo;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.completedAt!).getTime();
+        const dateB = new Date(b.completedAt!).getTime();
+        return dateB - dateA; // Most recent first
+      });
+  }, [tasks]);
+
+  const activeTasks = tasks.filter((t) => !t.completedAt);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -368,7 +446,8 @@ export function BacklogPage() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900">All Tasks</h2>
             <p className="text-sm text-gray-500">
-              {tasks.length} task{tasks.length !== 1 ? 's' : ''} total
+              {activeTasks.length} task{activeTasks.length !== 1 ? 's' : ''} active
+              {completedTasks.length > 0 && `, ${completedTasks.length} done`}
             </p>
           </div>
 
@@ -415,6 +494,11 @@ export function BacklogPage() {
             )}
           </DragOverlay>
         </DndContext>
+
+        {/* Completed tasks section */}
+        <div className="mt-4">
+          <CompletedSection tasks={completedTasks} onOpenPanel={setSelectedTask} />
+        </div>
       </div>
 
       {selectedTask && (

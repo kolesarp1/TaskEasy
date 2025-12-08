@@ -34,7 +34,7 @@ function DoneDropZone({ isOver, isDragging }: { isOver: boolean; isDragging: boo
         transition-all duration-200
         ${isDragging ? 'opacity-100' : 'opacity-60'}
         ${isOver
-          ? 'bg-green-500 text-white scale-110 shadow-lg'
+          ? 'bg-green-500/90 text-white scale-110 shadow-lg backdrop-blur-sm'
           : 'bg-green-100 text-green-700 border-2 border-green-300'
         }
       `}
@@ -55,7 +55,7 @@ function TrashDropZone({ isOver, isDragging }: { isOver: boolean; isDragging: bo
         transition-all duration-200
         ${isDragging ? 'opacity-100' : 'opacity-60'}
         ${isOver
-          ? 'bg-red-500 text-white scale-110 shadow-lg'
+          ? 'bg-red-500/90 text-white scale-110 shadow-lg backdrop-blur-sm'
           : 'bg-red-100 text-red-700 border-2 border-red-300'
         }
       `}
@@ -77,7 +77,7 @@ function DoneDroppable({ children, isDragging }: { children: (isOver: boolean) =
   return (
     <div
       ref={setNodeRef}
-      className={`fixed top-4 left-4 z-40 transition-opacity ${isDragging ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      className={`fixed top-4 left-4 transition-opacity ${isDragging ? 'pointer-events-auto' : 'pointer-events-none'} ${isOver ? 'z-[1000]' : 'z-40'}`}
     >
       {children(isOver)}
     </div>
@@ -93,7 +93,7 @@ function TrashDroppable({ children, isDragging }: { children: (isOver: boolean) 
   return (
     <div
       ref={setNodeRef}
-      className={`fixed bottom-4 right-4 z-40 transition-opacity ${isDragging ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      className={`fixed bottom-4 right-4 transition-opacity ${isDragging ? 'pointer-events-auto' : 'pointer-events-none'} ${isOver ? 'z-[1000]' : 'z-40'}`}
     >
       {children(isOver)}
     </div>
@@ -101,7 +101,7 @@ function TrashDroppable({ children, isDragging }: { children: (isOver: boolean) 
 }
 
 export function MatrixPage() {
-  const { tasks, updateTask, deleteTask, createTask, uploadScreenshot } = useTasks();
+  const { tasks, updateTask, deleteTask, completeTask, createTask, uploadScreenshot } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -110,7 +110,7 @@ export function MatrixPage() {
   const dragStartInfo = useRef<{ taskId: string; startX: number; startY: number } | null>(null);
   const lastMousePos = useRef<{ x: number; y: number } | null>(null);
 
-  const matrixTasks = tasks.filter((t) => t.quadrant !== 'backlog');
+  const matrixTasks = tasks.filter((t) => t.quadrant !== 'backlog' && !t.completedAt);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -216,13 +216,17 @@ export function MatrixPage() {
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over, delta } = event;
-      setActiveTask(null);
       setIsDragging(false);
       setHoverQuadrant(null);
 
-      if (!over) {
+      const cleanup = () => {
+        setActiveTask(null);
         dragStartInfo.current = null;
         lastMousePos.current = null;
+      };
+
+      if (!over) {
+        cleanup();
         return;
       }
 
@@ -230,32 +234,34 @@ export function MatrixPage() {
       const targetId = over.id as string;
 
       // Check if dropped on trash or done
-      if (targetId === 'trash' || targetId === 'done') {
+      if (targetId === 'trash') {
         await deleteTask(taskId);
-        dragStartInfo.current = null;
-        lastMousePos.current = null;
+        cleanup();
+        return;
+      }
+
+      if (targetId === 'done') {
+        await completeTask(taskId);
+        cleanup();
         return;
       }
 
       const targetQuadrant = targetId as QuadrantType;
       if (!QUADRANTS.includes(targetQuadrant as Exclude<QuadrantType, 'backlog'>)) {
-        dragStartInfo.current = null;
-        lastMousePos.current = null;
+        cleanup();
         return;
       }
 
       const task = tasks.find((t) => t.id === taskId);
       if (!task) {
-        dragStartInfo.current = null;
-        lastMousePos.current = null;
+        cleanup();
         return;
       }
 
       // Get the quadrant element to calculate percentage position
       const quadrantEl = quadrantRefs.current.get(targetQuadrant);
       if (!quadrantEl) {
-        dragStartInfo.current = null;
-        lastMousePos.current = null;
+        cleanup();
         return;
       }
 
@@ -291,10 +297,9 @@ export function MatrixPage() {
         positionY: newPosY,
       });
 
-      dragStartInfo.current = null;
-      lastMousePos.current = null;
+      cleanup();
     },
-    [tasks, updateTask, deleteTask]
+    [tasks, updateTask, deleteTask, completeTask]
   );
 
   const getQuadrantTasks = (quadrant: Exclude<QuadrantType, 'backlog'>) => {
