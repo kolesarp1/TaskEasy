@@ -16,12 +16,12 @@ interface QuadrantProps {
 // Shared color map for quadrants - export for use in other components
 export const quadrantColorMap: Record<string, { bg: string; inputBg: string; label: string; border: string; cardBg: string; cardBorder: string }> = {
   'do-first': {
-    bg: 'bg-green-100',
-    inputBg: 'bg-green-200',
-    label: 'text-green-700',
-    border: 'border-green-400',
-    cardBg: 'bg-green-200',
-    cardBorder: 'border-green-400',
+    bg: 'bg-red-100',
+    inputBg: 'bg-red-200',
+    label: 'text-red-700',
+    border: 'border-red-400',
+    cardBg: 'bg-red-200',
+    cardBorder: 'border-red-400',
   },
   schedule: {
     bg: 'bg-cyan-100',
@@ -32,12 +32,12 @@ export const quadrantColorMap: Record<string, { bg: string; inputBg: string; lab
     cardBorder: 'border-cyan-400',
   },
   delegate: {
-    bg: 'bg-red-100',
-    inputBg: 'bg-red-200',
-    label: 'text-red-700',
-    border: 'border-red-400',
-    cardBg: 'bg-red-200',
-    cardBorder: 'border-red-400',
+    bg: 'bg-amber-100',
+    inputBg: 'bg-amber-200',
+    label: 'text-amber-700',
+    border: 'border-amber-400',
+    cardBg: 'bg-amber-200',
+    cardBorder: 'border-amber-400',
   },
   eliminate: {
     bg: 'bg-gray-200',

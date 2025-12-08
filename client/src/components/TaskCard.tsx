@@ -13,9 +13,9 @@ interface TaskCardProps {
 
 const quadrantColors: Record<Quadrant, { bg: string; border: string; text: string }> = {
   do_first: {
-    bg: 'bg-green-200',
-    border: 'border-green-400',
-    text: 'text-green-900',
+    bg: 'bg-red-200',
+    border: 'border-red-400',
+    text: 'text-red-900',
   },
   schedule: {
     bg: 'bg-cyan-200',
@@ -23,9 +23,9 @@ const quadrantColors: Record<Quadrant, { bg: string; border: string; text: strin
     text: 'text-cyan-900',
   },
   delegate: {
-    bg: 'bg-red-200',
-    border: 'border-red-400',
-    text: 'text-red-900',
+    bg: 'bg-amber-200',
+    border: 'border-amber-400',
+    text: 'text-amber-900',
   },
   eliminate: {
     bg: 'bg-gray-300',

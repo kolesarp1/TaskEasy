@@ -22,11 +22,11 @@ const QUADRANT_ORDER: Quadrant[] = ['do_first', 'schedule', 'delegate', 'elimina
 
 const quadrantStyles: Record<Quadrant, { bg: string; border: string; text: string; headerBg: string; itemBg: string }> = {
   do_first: {
-    bg: 'bg-green-50',
-    border: 'border-green-300',
-    text: 'text-green-800',
-    headerBg: 'bg-green-100',
-    itemBg: 'bg-green-100 hover:bg-green-200',
+    bg: 'bg-red-50',
+    border: 'border-red-300',
+    text: 'text-red-800',
+    headerBg: 'bg-red-100',
+    itemBg: 'bg-red-100 hover:bg-red-200',
   },
   schedule: {
     bg: 'bg-cyan-50',
@@ -36,11 +36,11 @@ const quadrantStyles: Record<Quadrant, { bg: string; border: string; text: strin
     itemBg: 'bg-cyan-100 hover:bg-cyan-200',
   },
   delegate: {
-    bg: 'bg-red-50',
-    border: 'border-red-300',
-    text: 'text-red-800',
-    headerBg: 'bg-red-100',
-    itemBg: 'bg-red-100 hover:bg-red-200',
+    bg: 'bg-amber-50',
+    border: 'border-amber-300',
+    text: 'text-amber-800',
+    headerBg: 'bg-amber-100',
+    itemBg: 'bg-amber-100 hover:bg-amber-200',
   },
   eliminate: {
     bg: 'bg-gray-100',
