@@ -51,7 +51,21 @@ function formatTask(t) {
 }
 
 exports.handler = async (event) => {
-  const path = event.path.replace('/.netlify/functions/api', '');
+  // Handle path from various Netlify redirect scenarios
+  let path = event.path;
+
+  // If redirected from /api/*, extract the path after /api
+  if (path.startsWith('/api/')) {
+    path = path.replace('/api', '');
+  } else if (path.startsWith('/.netlify/functions/api')) {
+    path = path.replace('/.netlify/functions/api', '');
+  }
+
+  // Ensure path starts with /
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+
   const method = event.httpMethod;
 
   const headers = {
@@ -66,6 +80,20 @@ exports.handler = async (event) => {
   }
 
   try {
+    // HEALTH CHECK - verify function is working
+    if (path === '/health' && method === 'GET') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          hasSupabaseUrl: !!process.env.SUPABASE_URL,
+          hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
+        }),
+      };
+    }
+
     // AUTH ROUTES
     if (path === '/auth/signup' && method === 'POST') {
       const { email, password } = JSON.parse(event.body || '{}');
@@ -187,9 +215,9 @@ exports.handler = async (event) => {
       }
     }
 
-    return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) };
+    return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found', path, method }) };
   } catch (error) {
     console.error('API error:', error);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Internal server error' }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Internal server error', message: error.message }) };
   }
 };
