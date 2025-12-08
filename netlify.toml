@@ -6,23 +6,8 @@
   directory = "netlify/functions"
 
 [[redirects]]
-  from = "/api/auth/*"
-  to = "/.netlify/functions/auth/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/api/tasks/*"
-  to = "/.netlify/functions/tasks/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/api/tasks"
-  to = "/.netlify/functions/tasks"
-  status = 200
-
-[[redirects]]
-  from = "/api/screenshots/*"
-  to = "/.netlify/functions/screenshots/:splat"
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
 [[redirects]]
