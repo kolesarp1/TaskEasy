@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTasks } from '../context/TaskContext';
-import { LayoutGrid, List, LogOut, Merge, Menu, X, User, AlertCircle } from 'lucide-react';
+import { LayoutGrid, List, LogOut, Merge, Menu, X, User, AlertCircle, HelpCircle } from 'lucide-react';
 
 export function Layout() {
   const { user, isGuest, signOut } = useAuth();
@@ -92,6 +92,20 @@ export function Layout() {
             >
               <List size={18} />
               Backlog
+            </NavLink>
+            <NavLink
+              to="/about"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`
+              }
+            >
+              <HelpCircle size={18} />
+              About This Method
             </NavLink>
 
             <div className="border-t border-gray-100 mt-2 pt-2">

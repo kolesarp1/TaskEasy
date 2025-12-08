@@ -79,21 +79,16 @@ function TaskLineItem({ task, onOpenPanel }: TaskLineItemProps) {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={`
         flex items-center gap-2 px-3 py-2 rounded ${styles.itemBg}
-        cursor-pointer transition-colors
+        cursor-grab active:cursor-grabbing transition-colors
         ${isDragging ? 'opacity-50' : ''}
       `}
       onClick={onOpenPanel}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <GripVertical size={14} />
-      </button>
+      <GripVertical size={14} className="text-gray-400 flex-shrink-0" />
       <span className={`text-sm ${styles.text} flex-1 truncate`}>{task.title}</span>
     </div>
   );
@@ -103,9 +98,27 @@ interface QuadrantSectionProps {
   quadrant: Quadrant;
   tasks: Task[];
   onOpenPanel: (task: Task) => void;
+  onCreateTask: (quadrant: Quadrant) => void;
+  isCreating: boolean;
+  creatingQuadrant: Quadrant | null;
+  newTaskTitle: string;
+  onNewTaskTitleChange: (title: string) => void;
+  onCreateConfirm: () => void;
+  onCreateCancel: () => void;
 }
 
-function QuadrantSection({ quadrant, tasks, onOpenPanel }: QuadrantSectionProps) {
+function QuadrantSection({
+  quadrant,
+  tasks,
+  onOpenPanel,
+  onCreateTask,
+  isCreating,
+  creatingQuadrant,
+  newTaskTitle,
+  onNewTaskTitleChange,
+  onCreateConfirm,
+  onCreateCancel,
+}: QuadrantSectionProps) {
   const styles = quadrantStyles[quadrant];
 
   const { setNodeRef, isOver } = useDroppable({
@@ -119,10 +132,28 @@ function QuadrantSection({ quadrant, tasks, onOpenPanel }: QuadrantSectionProps)
     return info ? info.label : q;
   };
 
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    // Don't create if clicking on a task item
+    const target = e.target as HTMLElement;
+    if (target.closest('.task-item')) return;
+    onCreateTask(quadrant);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onCreateConfirm();
+    } else if (e.key === 'Escape') {
+      onCreateCancel();
+    }
+  };
+
+  const showInlineCreator = isCreating && creatingQuadrant === quadrant;
+
   return (
     <div
       ref={setNodeRef}
       className={`rounded-lg border ${styles.border} overflow-hidden ${isOver ? 'ring-2 ring-indigo-400' : ''}`}
+      onDoubleClick={handleDoubleClick}
     >
       <div className={`px-4 py-2 ${styles.headerBg}`}>
         <h3 className={`font-semibold ${styles.text} text-sm`}>
@@ -133,19 +164,34 @@ function QuadrantSection({ quadrant, tasks, onOpenPanel }: QuadrantSectionProps)
         </h3>
       </div>
       <div className={`p-2 ${styles.bg} min-h-[60px]`}>
+        {showInlineCreator && (
+          <div className="mb-2">
+            <input
+              type="text"
+              autoFocus
+              className={`w-full px-3 py-2 text-sm border-2 ${styles.border} rounded focus:outline-none focus:ring-2 focus:ring-indigo-400`}
+              placeholder="New task title..."
+              value={newTaskTitle}
+              onChange={(e) => onNewTaskTitleChange(e.target.value)}
+              onBlur={onCreateConfirm}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+        )}
         {tasks.length > 0 ? (
           <div className="space-y-1">
             {tasks.map((task) => (
-              <TaskLineItem
-                key={task.id}
-                task={task}
-                onOpenPanel={() => onOpenPanel(task)}
-              />
+              <div key={task.id} className="task-item">
+                <TaskLineItem
+                  task={task}
+                  onOpenPanel={() => onOpenPanel(task)}
+                />
+              </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-gray-400 text-center py-4">Drop tasks here</p>
-        )}
+        ) : !showInlineCreator ? (
+          <p className="text-xs text-gray-400 text-center py-4">Double-click to add or drop tasks here</p>
+        ) : null}
       </div>
     </div>
   );
@@ -155,6 +201,7 @@ export function BacklogPage() {
   const { tasks, createTask, updateTask, uploadScreenshot } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [creatingQuadrant, setCreatingQuadrant] = useState<Quadrant | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -283,25 +330,35 @@ export function BacklogPage() {
   const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
       setIsCreating(false);
+      setCreatingQuadrant(null);
       return;
     }
 
+    const targetQuadrant = creatingQuadrant || 'backlog';
+    const isMatrixQuadrant = targetQuadrant !== 'backlog';
+
     await createTask({
       title: newTaskTitle.trim(),
-      quadrant: 'backlog',
+      quadrant: targetQuadrant,
+      positionX: isMatrixQuadrant ? 30 + Math.random() * 20 : undefined,
+      positionY: isMatrixQuadrant ? 30 + Math.random() * 20 : undefined,
     });
 
     setIsCreating(false);
+    setCreatingQuadrant(null);
     setNewTaskTitle('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleCreateTask();
-    } else if (e.key === 'Escape') {
-      setIsCreating(false);
-      setNewTaskTitle('');
-    }
+  const handleStartCreate = (quadrant: Quadrant) => {
+    setCreatingQuadrant(quadrant);
+    setIsCreating(true);
+    setNewTaskTitle('');
+  };
+
+  const handleCancelCreate = () => {
+    setIsCreating(false);
+    setCreatingQuadrant(null);
+    setNewTaskTitle('');
   };
 
   return (
@@ -316,28 +373,13 @@ export function BacklogPage() {
           </div>
 
           <button
-            onClick={() => setIsCreating(true)}
+            onClick={() => handleStartCreate('backlog')}
             className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
           >
             <Plus size={16} />
             Add to Backlog
           </button>
         </div>
-
-        {isCreating && (
-          <div className="mb-4 bg-white rounded-lg border-2 border-indigo-500 shadow-sm">
-            <input
-              type="text"
-              autoFocus
-              className="w-full px-4 py-3 text-sm rounded-lg focus:outline-none"
-              placeholder="New task title..."
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onBlur={handleCreateTask}
-              onKeyDown={handleKeyDown}
-            />
-          </div>
-        )}
 
         <DndContext
           sensors={sensors}
@@ -352,6 +394,13 @@ export function BacklogPage() {
                 quadrant={quadrant}
                 tasks={tasksByQuadrant[quadrant]}
                 onOpenPanel={setSelectedTask}
+                onCreateTask={handleStartCreate}
+                isCreating={isCreating}
+                creatingQuadrant={creatingQuadrant}
+                newTaskTitle={newTaskTitle}
+                onNewTaskTitleChange={setNewTaskTitle}
+                onCreateConfirm={handleCreateTask}
+                onCreateCancel={handleCancelCreate}
               />
             ))}
           </div>

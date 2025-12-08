@@ -30,25 +30,25 @@ export interface User {
 export const QUADRANT_INFO: Record<Exclude<Quadrant, 'backlog'>, { label: string; subtitle: string; description: string; color: string }> = {
   do_first: {
     label: 'Do',
-    subtitle: 'Do it now.',
+    subtitle: 'Tasks with deadlines or consequences.',
     description: 'Urgent & Important',
     color: 'do-first',
   },
   schedule: {
-    label: 'Decide',
-    subtitle: 'Schedule a time to do it.',
+    label: 'Schedule',
+    subtitle: 'Tasks with unclear deadlines that contribute to long-term success.',
     description: 'Not Urgent & Important',
     color: 'schedule',
   },
   delegate: {
     label: 'Delegate',
-    subtitle: 'Who can do it for you?',
+    subtitle: "Tasks that must get done but don't require your specific skill set.",
     description: 'Urgent & Not Important',
     color: 'delegate',
   },
   eliminate: {
     label: 'Delete',
-    subtitle: 'Eliminate it.',
+    subtitle: 'Distractions and unnecessary tasks.',
     description: 'Not Urgent & Not Important',
     color: 'eliminate',
   },

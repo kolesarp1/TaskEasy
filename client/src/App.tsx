@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { AuthPage } from './pages/AuthPage';
 import { MatrixPage } from './pages/MatrixPage';
 import { BacklogPage } from './pages/BacklogPage';
+import { AboutPage } from './pages/AboutPage';
 import { Layout } from './components/Layout';
 
 function AppRoute({ children }: { children: React.ReactNode }) {
@@ -63,6 +64,7 @@ export default function App() {
       >
         <Route index element={<MatrixPage />} />
         <Route path="backlog" element={<BacklogPage />} />
+        <Route path="about" element={<AboutPage />} />
       </Route>
     </Routes>
   );
