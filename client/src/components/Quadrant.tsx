@@ -153,13 +153,12 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef, activeTa
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="absolute task-card transition-all duration-150"
+            className="absolute task-card"
             style={{
               left: `${task.positionX ?? 10}%`,
               top: `${task.positionY ?? 10}%`,
               maxWidth: 'min(180px, 45%)',
-              opacity: task.id === activeTaskId ? 0.4 : 1,
-              transform: task.id === activeTaskId ? 'scale(0.95)' : 'scale(1)',
+              opacity: task.id === activeTaskId ? 0 : 1,
             }}
           >
             <TaskCard task={task} onOpenPanel={() => onTaskClick(task)} />

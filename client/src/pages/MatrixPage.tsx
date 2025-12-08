@@ -297,13 +297,20 @@ export function MatrixPage() {
         positionY: newPosY,
       });
 
-      // Wait for React to render and paint the updated position before hiding overlay
-      // Double RAF ensures we wait for both the commit and paint phases
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          cleanup();
-        });
+      // Wait for React to process the state update and paint the new position
+      // setTimeout(0) allows React's scheduler to process batched updates
+      // Double RAF then waits for render and paint phases
+      await new Promise<void>(resolve => {
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              resolve();
+            });
+          });
+        }, 0);
       });
+
+      cleanup();
     },
     [tasks, updateTask, deleteTask, completeTask]
   );
