@@ -1,11 +1,11 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTasks } from '../context/TaskContext';
-import { LayoutGrid, List, LogOut, Merge } from 'lucide-react';
+import { LayoutGrid, List, LogOut, Merge, AlertCircle } from 'lucide-react';
 
 export function Layout() {
-  const { user, signOut } = useAuth();
-  const { selectedTasks, mergeTasks, clearSelection } = useTasks();
+  const { user, isGuest, signOut } = useAuth();
+  const { selectedTasks, mergeTasks, clearSelection, tasks } = useTasks();
 
   const handleMerge = async () => {
     if (selectedTasks.size < 2) return;
@@ -72,17 +72,46 @@ export function Layout() {
               </div>
             )}
 
-            <span className="text-sm text-gray-600">{user?.email}</span>
-            <button
-              onClick={signOut}
-              className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors"
-              title="Sign out"
-            >
-              <LogOut size={18} />
-            </button>
+            {user ? (
+              <>
+                <span className="text-sm text-gray-600">{user.email}</span>
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut size={18} />
+                </button>
+              </>
+            ) : isGuest ? (
+              <Link
+                to="/auth"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Sign up to save
+              </Link>
+            ) : null}
           </div>
         </div>
       </header>
+
+      {isGuest && !user && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm text-amber-800">
+            <AlertCircle size={16} />
+            <span>
+              You're using TaskCanvas as a guest.{' '}
+              {tasks.length > 0 && (
+                <span className="font-medium">You have {tasks.length} task{tasks.length !== 1 ? 's' : ''} stored locally. </span>
+              )}
+              <Link to="/auth" className="underline font-medium hover:text-amber-900">
+                Sign up
+              </Link>{' '}
+              to save your tasks permanently.
+            </span>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 overflow-hidden">
         <Outlet />

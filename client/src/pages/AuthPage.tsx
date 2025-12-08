@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, continueAsGuest } = useAuth();
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -102,6 +104,27 @@ export function AuthPage() {
               >
                 {loading ? 'Please wait...' : isSignUp ? 'Create Account!' : 'Login Here!'}
               </button>
+
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-gray-200"></div>
+                <span className="flex-shrink mx-4 text-gray-400 text-sm">or</span>
+                <div className="flex-grow border-t border-gray-200"></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  continueAsGuest();
+                  navigate('/');
+                }}
+                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
+              >
+                Continue as Guest
+              </button>
+
+              <p className="text-xs text-gray-500 text-center">
+                Guest data is stored locally. Sign up to save your tasks permanently.
+              </p>
 
               <div className="text-center pt-2">
                 <button

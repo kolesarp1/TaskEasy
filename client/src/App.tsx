@@ -5,8 +5,8 @@ import { MatrixPage } from './pages/MatrixPage';
 import { BacklogPage } from './pages/BacklogPage';
 import { Layout } from './components/Layout';
 
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+function AppRoute({ children }: { children: React.ReactNode }) {
+  const { user, isGuest, loading } = useAuth();
 
   if (loading) {
     return (
@@ -16,7 +16,8 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  // Allow access if user is authenticated OR in guest mode
+  if (!user && !isGuest) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -55,9 +56,9 @@ export default function App() {
       <Route
         path="/"
         element={
-          <PrivateRoute>
+          <AppRoute>
             <Layout />
-          </PrivateRoute>
+          </AppRoute>
         }
       >
         <Route index element={<MatrixPage />} />
