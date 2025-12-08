@@ -5,7 +5,16 @@
 [functions]
   node_bundler = "esbuild"
   directory = "netlify/functions"
-  included_files = ["netlify/functions/prisma/**"]
+  external_node_modules = ["@prisma/client", "prisma"]
+
+[functions."auth"]
+  external_node_modules = ["@prisma/client", "prisma"]
+
+[functions."tasks"]
+  external_node_modules = ["@prisma/client", "prisma"]
+
+[functions."screenshots"]
+  external_node_modules = ["@prisma/client", "prisma"]
 
 [[redirects]]
   from = "/api/auth/*"
