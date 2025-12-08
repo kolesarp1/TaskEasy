@@ -153,7 +153,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef, activeTa
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="absolute task-card"
+            className="absolute task-card transition-opacity duration-75"
             style={{
               left: `${task.positionX ?? 10}%`,
               top: `${task.positionY ?? 10}%`,

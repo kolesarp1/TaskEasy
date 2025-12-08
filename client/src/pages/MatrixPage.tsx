@@ -297,9 +297,12 @@ export function MatrixPage() {
         positionY: newPosY,
       });
 
-      // Wait for React to process the state update before hiding overlay
+      // Wait for React to render and paint the updated position before hiding overlay
+      // Double RAF ensures we wait for both the commit and paint phases
       requestAnimationFrame(() => {
-        cleanup();
+        requestAnimationFrame(() => {
+          cleanup();
+        });
       });
     },
     [tasks, updateTask, deleteTask, completeTask]
