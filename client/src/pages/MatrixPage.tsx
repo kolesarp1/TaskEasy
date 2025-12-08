@@ -55,7 +55,7 @@ function TrashDroppable({ children }: { children: (isOver: boolean) => React.Rea
   return (
     <div
       ref={setNodeRef}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 p-4"
     >
       {children(isOver)}
     </div>
