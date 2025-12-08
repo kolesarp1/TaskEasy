@@ -1,15 +1,18 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
+  DragMoveEvent,
   DragOverlay,
   MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
   pointerWithin,
+  useDroppable,
 } from '@dnd-kit/core';
+import { Trash2 } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 import { Quadrant } from '../components/Quadrant';
 import { TaskCard } from '../components/TaskCard';
@@ -23,11 +26,47 @@ const QUADRANTS: Exclude<QuadrantType, 'backlog'>[] = [
   'eliminate',
 ];
 
+function TrashDropZone({ isOver }: { isOver: boolean }) {
+  return (
+    <div
+      className={`
+        fixed bottom-4 left-1/2 -translate-x-1/2 z-40
+        flex items-center gap-2 px-6 py-3 rounded-full
+        transition-all duration-200 shadow-lg
+        ${isOver
+          ? 'bg-red-500 text-white scale-110'
+          : 'bg-gray-800 text-gray-300'
+        }
+      `}
+    >
+      <Trash2 size={20} />
+      <span className="text-sm font-medium">
+        {isOver ? 'Release to delete' : 'Drop here to delete'}
+      </span>
+    </div>
+  );
+}
+
+function TrashDroppable({ children }: { children: (isOver: boolean) => React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'trash',
+    data: { type: 'trash' },
+  });
+
+  return (
+    <div ref={setNodeRef}>
+      {children(isOver)}
+    </div>
+  );
+}
+
 export function MatrixPage() {
-  const { tasks, updateTask } = useTasks();
+  const { tasks, updateTask, deleteTask } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [showTrash, setShowTrash] = useState(false);
   const quadrantRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastMousePosition = useRef({ x: 0, y: 0 });
 
   const matrixTasks = tasks.filter((t) => t.quadrant !== 'backlog');
 
@@ -46,23 +85,49 @@ export function MatrixPage() {
 
   const sensors = useSensors(mouseSensor, touchSensor);
 
+  // Track mouse position during drag
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      lastMousePosition.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   const handleDragStart = (event: DragStartEvent) => {
     const task = event.active.data.current?.task;
     if (task) {
       setActiveTask(task);
+      setShowTrash(true);
+    }
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    // Update mouse position from drag event if available
+    if (event.activatorEvent && 'clientX' in event.activatorEvent) {
+      const e = event.activatorEvent as MouseEvent;
+      lastMousePosition.current = { x: e.clientX, y: e.clientY };
     }
   };
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      const { active, over, delta } = event;
+      const { active, over } = event;
       setActiveTask(null);
+      setShowTrash(false);
 
       if (!over) return;
 
       const taskId = active.id as string;
-      const targetQuadrant = over.id as QuadrantType;
+      const targetId = over.id as string;
 
+      // Check if dropped on trash
+      if (targetId === 'trash') {
+        await deleteTask(taskId);
+        return;
+      }
+
+      const targetQuadrant = targetId as QuadrantType;
       if (!QUADRANTS.includes(targetQuadrant as Exclude<QuadrantType, 'backlog'>)) return;
 
       const task = tasks.find((t) => t.id === taskId);
@@ -73,26 +138,12 @@ export function MatrixPage() {
       if (!quadrantEl) return;
 
       const rect = quadrantEl.getBoundingClientRect();
+      const mouseX = lastMousePosition.current.x;
+      const mouseY = lastMousePosition.current.y;
 
-      let newPosX: number;
-      let newPosY: number;
-
-      if (task.quadrant === targetQuadrant) {
-        // Moving within same quadrant - apply delta to current position
-        const currentX = task.positionX ?? 20;
-        const currentY = task.positionY ?? 20;
-
-        // Convert delta pixels to percentage
-        const deltaXPercent = (delta.x / rect.width) * 100;
-        const deltaYPercent = (delta.y / rect.height) * 100;
-
-        newPosX = Math.max(2, Math.min(85, currentX + deltaXPercent));
-        newPosY = Math.max(2, Math.min(85, currentY + deltaYPercent));
-      } else {
-        // Moving to different quadrant - place in a reasonable position
-        newPosX = 20 + Math.random() * 30;
-        newPosY = 20 + Math.random() * 30;
-      }
+      // Calculate position as percentage within the quadrant
+      const newPosX = Math.max(2, Math.min(85, ((mouseX - rect.left) / rect.width) * 100));
+      const newPosY = Math.max(2, Math.min(85, ((mouseY - rect.top) / rect.height) * 100));
 
       await updateTask(taskId, {
         quadrant: targetQuadrant,
@@ -100,7 +151,7 @@ export function MatrixPage() {
         positionY: newPosY,
       });
     },
-    [tasks, updateTask]
+    [tasks, updateTask, deleteTask]
   );
 
   const getQuadrantTasks = (quadrant: Exclude<QuadrantType, 'backlog'>) => {
@@ -121,6 +172,7 @@ export function MatrixPage() {
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
         {/* Main container with axis labels */}
@@ -198,11 +250,18 @@ export function MatrixPage() {
           </div>
         </div>
 
+        {/* Trash drop zone - only visible when dragging */}
+        {showTrash && (
+          <TrashDroppable>
+            {(isOver) => <TrashDropZone isOver={isOver} />}
+          </TrashDroppable>
+        )}
+
         <DragOverlay>
           {activeTask && (
             <TaskCard
               task={activeTask}
-              onClick={() => {}}
+              onOpenPanel={() => {}}
               style={{ width: '150px' }}
             />
           )}

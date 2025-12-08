@@ -6,7 +6,7 @@ import { useTasks } from '../context/TaskContext';
 
 interface TaskCardProps {
   task: Task;
-  onClick: () => void;
+  onOpenPanel: () => void;
   style?: React.CSSProperties;
 }
 
@@ -38,7 +38,7 @@ const quadrantColors: Record<Quadrant, { bg: string; border: string; text: strin
   },
 };
 
-export function TaskCard({ task, onClick, style }: TaskCardProps) {
+export function TaskCard({ task, onOpenPanel, style }: TaskCardProps) {
   const { updateTask } = useTasks();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
@@ -68,9 +68,19 @@ export function TaskCard({ task, onClick, style }: TaskCardProps) {
     setEditTitle(task.title);
   }, [task.title]);
 
+  // Single click = start editing
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isEditing) {
+      setIsEditing(true);
+    }
+  };
+
+  // Double click = open detail panel
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsEditing(true);
+    setIsEditing(false);
+    onOpenPanel();
   };
 
   const handleSave = async () => {
@@ -90,12 +100,6 @@ export function TaskCard({ task, onClick, style }: TaskCardProps) {
     } else if (e.key === 'Escape') {
       setEditTitle(task.title);
       setIsEditing(false);
-    }
-  };
-
-  const handleClick = () => {
-    if (!isEditing) {
-      onClick();
     }
   };
 

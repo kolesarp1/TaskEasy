@@ -12,6 +12,34 @@ interface QuadrantProps {
   onRegisterRef?: (el: HTMLDivElement | null) => void;
 }
 
+// Shared color map for quadrants - export for use in other components
+export const quadrantColorMap: Record<string, { bg: string; inputBg: string; label: string; border: string }> = {
+  'do-first': {
+    bg: 'bg-red-100',
+    inputBg: 'bg-red-200',
+    label: 'text-red-800',
+    border: 'border-red-300',
+  },
+  schedule: {
+    bg: 'bg-green-100',
+    inputBg: 'bg-green-200',
+    label: 'text-green-800',
+    border: 'border-green-300',
+  },
+  delegate: {
+    bg: 'bg-purple-100',
+    inputBg: 'bg-purple-200',
+    label: 'text-purple-800',
+    border: 'border-purple-300',
+  },
+  eliminate: {
+    bg: 'bg-amber-100',
+    inputBg: 'bg-amber-200',
+    label: 'text-amber-800',
+    border: 'border-amber-300',
+  },
+};
+
 export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: QuadrantProps) {
   const { createTask } = useTasks();
   const [isCreating, setIsCreating] = useState(false);
@@ -33,31 +61,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: Quadra
   );
 
   const info = QUADRANT_INFO[quadrant];
-
-  const colorMap: Record<string, { bg: string; label: string; labelBg: string }> = {
-    'do-first': {
-      bg: 'bg-red-100',
-      label: 'text-red-800',
-      labelBg: 'bg-red-200/80',
-    },
-    schedule: {
-      bg: 'bg-green-100',
-      label: 'text-green-800',
-      labelBg: 'bg-green-200/80',
-    },
-    delegate: {
-      bg: 'bg-purple-100',
-      label: 'text-purple-800',
-      labelBg: 'bg-purple-200/80',
-    },
-    eliminate: {
-      bg: 'bg-amber-100',
-      label: 'text-amber-800',
-      labelBg: 'bg-amber-200/80',
-    },
-  };
-
-  const colorClasses = colorMap[info.color] ?? colorMap['do-first'];
+  const colorClasses = quadrantColorMap[info.color] ?? quadrantColorMap['do-first'];
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Allow creating task when clicking on the quadrant itself
@@ -134,7 +138,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: Quadra
               maxWidth: 'min(180px, 45%)',
             }}
           >
-            <TaskCard task={task} onClick={() => onTaskClick(task)} />
+            <TaskCard task={task} onOpenPanel={() => onTaskClick(task)} />
           </div>
         ))}
 
@@ -150,7 +154,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: Quadra
             <input
               type="text"
               autoFocus
-              className="w-40 px-3 py-2 text-sm border-2 border-indigo-500 rounded shadow-lg focus:outline-none bg-white"
+              className={`w-40 px-3 py-2 text-sm border-2 ${colorClasses.border} ${colorClasses.inputBg} rounded shadow-lg focus:outline-none ${colorClasses.label} placeholder-gray-600`}
               placeholder="New task..."
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
