@@ -291,26 +291,17 @@ export function MatrixPage() {
         }
       }
 
+      // flushSync in TaskContext ensures the state update is synchronous for guest mode
       await updateTask(taskId, {
         quadrant: targetQuadrant,
         positionX: newPosX,
         positionY: newPosY,
       });
 
-      // Wait for React to process the state update and paint the new position
-      // setTimeout(0) allows React's scheduler to process batched updates
-      // Double RAF then waits for render and paint phases
-      await new Promise<void>(resolve => {
-        setTimeout(() => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        }, 0);
+      // Single RAF to wait for the DOM paint after the synchronous state update
+      requestAnimationFrame(() => {
+        cleanup();
       });
-
-      cleanup();
     },
     [tasks, updateTask, deleteTask, completeTask]
   );

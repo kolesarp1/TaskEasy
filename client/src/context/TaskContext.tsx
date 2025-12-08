@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { tasksApi, screenshotsApi } from '../api';
 import { useAuth } from './AuthContext';
 import type { Task, Quadrant, Screenshot } from '../types';
@@ -135,16 +136,19 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   ) => {
     if (isGuest && !user) {
       let updatedTask: Task | null = null;
-      setTasks((prev) => {
-        const updated = prev.map((t) => {
-          if (t.id === id) {
-            updatedTask = { ...t, ...data, updatedAt: new Date().toISOString() };
-            return updatedTask;
-          }
-          return t;
+      // Use flushSync to force synchronous update - prevents flicker on drag drop
+      flushSync(() => {
+        setTasks((prev) => {
+          const updated = prev.map((t) => {
+            if (t.id === id) {
+              updatedTask = { ...t, ...data, updatedAt: new Date().toISOString() };
+              return updatedTask;
+            }
+            return t;
+          });
+          saveGuestTasks(updated);
+          return updated;
         });
-        saveGuestTasks(updated);
-        return updated;
       });
       return updatedTask!;
     }
