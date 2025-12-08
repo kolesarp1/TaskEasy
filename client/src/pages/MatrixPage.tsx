@@ -280,25 +280,46 @@ export function MatrixPage() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        {/* Main container with axis labels */}
-        <div className="h-full w-full flex">
-          {/* Left axis label - IMPORTANT */}
-          <div className="w-8 flex-shrink-0 flex items-center justify-center">
-            <span
-              className="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-            >
-              Important
-            </span>
+        {/* Main container with axis labels like reference image */}
+        <div className="h-full w-full flex flex-col">
+          {/* Top row: spacer + column headers + spacer */}
+          <div className="h-6 flex-shrink-0 flex">
+            <div className="w-24 flex-shrink-0" /> {/* Left spacer for row labels */}
+            <div className="flex-1 flex">
+              <div className="flex-1 flex items-center justify-center">
+                <span className="text-sm font-semibold text-red-600 border border-red-400 px-3 py-0.5">
+                  Urgent
+                </span>
+              </div>
+              <div className="flex-1 flex items-center justify-center">
+                <span className="text-sm font-semibold text-red-600 border border-red-400 px-3 py-0.5">
+                  Not Urgent
+                </span>
+              </div>
+            </div>
+            <div className="w-6 flex-shrink-0" /> {/* Right spacer for symmetry */}
           </div>
 
-          {/* Main content area */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Top axis label - URGENT */}
-            <div className="h-8 flex-shrink-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                Urgent
-              </span>
+          {/* Main content row */}
+          <div className="flex-1 flex min-h-0">
+            {/* Left column: row labels */}
+            <div className="w-24 flex-shrink-0 flex flex-col">
+              <div className="flex-1 flex items-center justify-center">
+                <span
+                  className="text-sm font-semibold text-red-600 border border-red-400 px-2 py-0.5 whitespace-nowrap"
+                  style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                >
+                  Important
+                </span>
+              </div>
+              <div className="flex-1 flex items-center justify-center">
+                <span
+                  className="text-sm font-semibold text-red-600 border border-red-400 px-2 py-0.5 whitespace-nowrap"
+                  style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                >
+                  Not Important
+                </span>
+              </div>
             </div>
 
             {/* Matrix grid */}
@@ -339,7 +360,13 @@ export function MatrixPage() {
                 activeTaskId={activeTask?.id}
               />
             </div>
+
+            {/* Right spacer for symmetry */}
+            <div className="w-6 flex-shrink-0" />
           </div>
+
+          {/* Bottom spacer for symmetry */}
+          <div className="h-6 flex-shrink-0" />
         </div>
 
         {/* Trash drop zone - only visible when dragging */}
