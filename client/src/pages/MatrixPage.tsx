@@ -3,7 +3,6 @@ import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
-  DragMoveEvent,
   DragOverlay,
   MouseSensor,
   TouchSensor,
@@ -61,12 +60,12 @@ function TrashDroppable({ children }: { children: (isOver: boolean) => React.Rea
 }
 
 export function MatrixPage() {
-  const { tasks, updateTask, deleteTask } = useTasks();
+  const { tasks, updateTask, deleteTask, createTask, uploadScreenshot } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const quadrantRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const lastMousePosition = useRef({ x: 0, y: 0 });
+  const dragStartInfo = useRef<{ taskId: string; startX: number; startY: number } | null>(null);
 
   const matrixTasks = tasks.filter((t) => t.quadrant !== 'backlog');
 
@@ -85,38 +84,76 @@ export function MatrixPage() {
 
   const sensors = useSensors(mouseSensor, touchSensor);
 
-  // Track mouse position during drag
+  // Handle paste to create new task
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      lastMousePosition.current = { x: e.clientX, y: e.clientY };
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Don't handle if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      const clipboardData = e.clipboardData;
+      if (!clipboardData) return;
+
+      // Check for images first
+      const items = clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            // Create task with generic title, then add screenshot
+            const task = await createTask({
+              title: 'Pasted image',
+              quadrant: 'backlog',
+            });
+            await uploadScreenshot(task.id, file);
+            setSelectedTask(task);
+          }
+          return;
+        }
+      }
+
+      // Check for text
+      const text = clipboardData.getData('text/plain');
+      if (text && text.trim()) {
+        e.preventDefault();
+        const title = text.trim().slice(0, 200); // Limit title length
+        const task = await createTask({
+          title,
+          quadrant: 'backlog',
+        });
+        setSelectedTask(task);
+      }
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [createTask, uploadScreenshot]);
 
   const handleDragStart = (event: DragStartEvent) => {
-    const task = event.active.data.current?.task;
+    const task = event.active.data.current?.task as Task | undefined;
     if (task) {
       setActiveTask(task);
       setShowTrash(true);
-    }
-  };
-
-  const handleDragMove = (event: DragMoveEvent) => {
-    // Update mouse position from drag event if available
-    if (event.activatorEvent && 'clientX' in event.activatorEvent) {
-      const e = event.activatorEvent as MouseEvent;
-      lastMousePosition.current = { x: e.clientX, y: e.clientY };
+      dragStartInfo.current = {
+        taskId: task.id,
+        startX: task.positionX ?? 20,
+        startY: task.positionY ?? 20,
+      };
     }
   };
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      const { active, over } = event;
+      const { active, over, delta } = event;
       setActiveTask(null);
       setShowTrash(false);
 
-      if (!over) return;
+      if (!over) {
+        dragStartInfo.current = null;
+        return;
+      }
 
       const taskId = active.id as string;
       const targetId = over.id as string;
@@ -124,32 +161,53 @@ export function MatrixPage() {
       // Check if dropped on trash
       if (targetId === 'trash') {
         await deleteTask(taskId);
+        dragStartInfo.current = null;
         return;
       }
 
       const targetQuadrant = targetId as QuadrantType;
-      if (!QUADRANTS.includes(targetQuadrant as Exclude<QuadrantType, 'backlog'>)) return;
+      if (!QUADRANTS.includes(targetQuadrant as Exclude<QuadrantType, 'backlog'>)) {
+        dragStartInfo.current = null;
+        return;
+      }
 
       const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
+      if (!task) {
+        dragStartInfo.current = null;
+        return;
+      }
 
       // Get the quadrant element to calculate percentage position
       const quadrantEl = quadrantRefs.current.get(targetQuadrant);
-      if (!quadrantEl) return;
+      if (!quadrantEl) {
+        dragStartInfo.current = null;
+        return;
+      }
 
       const rect = quadrantEl.getBoundingClientRect();
-      const mouseX = lastMousePosition.current.x;
-      const mouseY = lastMousePosition.current.y;
 
-      // Calculate position as percentage within the quadrant
-      const newPosX = Math.max(2, Math.min(85, ((mouseX - rect.left) / rect.width) * 100));
-      const newPosY = Math.max(2, Math.min(85, ((mouseY - rect.top) / rect.height) * 100));
+      let newPosX: number;
+      let newPosY: number;
+
+      if (task.quadrant === targetQuadrant && dragStartInfo.current) {
+        // Same quadrant - apply delta to starting position
+        const deltaXPercent = (delta.x / rect.width) * 100;
+        const deltaYPercent = (delta.y / rect.height) * 100;
+        newPosX = Math.max(2, Math.min(85, dragStartInfo.current.startX + deltaXPercent));
+        newPosY = Math.max(2, Math.min(85, dragStartInfo.current.startY + deltaYPercent));
+      } else {
+        // Different quadrant - place at center-ish position
+        newPosX = 30 + Math.random() * 20;
+        newPosY = 30 + Math.random() * 20;
+      }
 
       await updateTask(taskId, {
         quadrant: targetQuadrant,
         positionX: newPosX,
         positionY: newPosY,
       });
+
+      dragStartInfo.current = null;
     },
     [tasks, updateTask, deleteTask]
   );
@@ -172,7 +230,6 @@ export function MatrixPage() {
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
-        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
         {/* Main container with axis labels */}
@@ -257,13 +314,14 @@ export function MatrixPage() {
           </TrashDroppable>
         )}
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeTask && (
-            <TaskCard
-              task={activeTask}
-              onOpenPanel={() => {}}
-              style={{ width: '150px' }}
-            />
+            <div className="w-[140px]">
+              <TaskCard
+                task={activeTask}
+                onOpenPanel={() => {}}
+              />
+            </div>
           )}
         </DragOverlay>
       </DndContext>

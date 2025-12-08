@@ -3,86 +3,155 @@ import {
   DndContext,
   DragEndEvent,
   DragOverlay,
+  DragStartEvent,
   closestCenter,
   MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
   useDroppable,
+  useDraggable,
 } from '@dnd-kit/core';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, GripVertical } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 import { TaskDetailPanel } from '../components/TaskDetailPanel';
-import { TaskCard } from '../components/TaskCard';
 import { QUADRANT_INFO } from '../types';
 import type { Task, Quadrant } from '../types';
 
 const QUADRANT_ORDER: Quadrant[] = ['do_first', 'schedule', 'delegate', 'eliminate', 'backlog'];
 
-const quadrantStyles: Record<Quadrant, { bg: string; border: string; text: string; headerBg: string }> = {
+const quadrantStyles: Record<Quadrant, { bg: string; border: string; text: string; headerBg: string; itemBg: string }> = {
   do_first: {
     bg: 'bg-red-50',
     border: 'border-red-200',
     text: 'text-red-800',
     headerBg: 'bg-red-100',
+    itemBg: 'bg-red-100 hover:bg-red-200',
   },
   schedule: {
     bg: 'bg-green-50',
     border: 'border-green-200',
     text: 'text-green-800',
     headerBg: 'bg-green-100',
+    itemBg: 'bg-green-100 hover:bg-green-200',
   },
   delegate: {
     bg: 'bg-purple-50',
     border: 'border-purple-200',
     text: 'text-purple-800',
     headerBg: 'bg-purple-100',
+    itemBg: 'bg-purple-100 hover:bg-purple-200',
   },
   eliminate: {
     bg: 'bg-amber-50',
     border: 'border-amber-200',
     text: 'text-amber-800',
     headerBg: 'bg-amber-100',
+    itemBg: 'bg-amber-100 hover:bg-amber-200',
   },
   backlog: {
     bg: 'bg-gray-50',
     border: 'border-gray-200',
     text: 'text-gray-800',
     headerBg: 'bg-gray-100',
+    itemBg: 'bg-gray-100 hover:bg-gray-200',
   },
 };
 
-function TrashDropZone({ isVisible }: { isVisible: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'trash',
-    data: { type: 'trash' },
+interface TaskLineItemProps {
+  task: Task;
+  onOpenPanel: () => void;
+}
+
+function TaskLineItem({ task, onOpenPanel }: TaskLineItemProps) {
+  const styles = quadrantStyles[task.quadrant];
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+    data: { task },
   });
 
-  if (!isVisible) return null;
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
 
   return (
     <div
       ref={setNodeRef}
+      style={style}
       className={`
-        fixed bottom-4 left-1/2 -translate-x-1/2 z-40
-        flex items-center gap-2 px-6 py-3 rounded-full
-        transition-all duration-200 shadow-lg
-        ${isOver
-          ? 'bg-red-500 text-white scale-110'
-          : 'bg-gray-800 text-gray-300'
-        }
+        flex items-center gap-2 px-3 py-2 rounded ${styles.itemBg}
+        cursor-pointer transition-colors
+        ${isDragging ? 'opacity-50' : ''}
       `}
+      onClick={onOpenPanel}
     >
-      <Trash2 size={20} />
-      <span className="text-sm font-medium">
-        {isOver ? 'Release to delete' : 'Drop here to delete'}
-      </span>
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical size={14} />
+      </button>
+      <span className={`text-sm ${styles.text} flex-1 truncate`}>{task.title}</span>
+    </div>
+  );
+}
+
+interface QuadrantSectionProps {
+  quadrant: Quadrant;
+  tasks: Task[];
+  onOpenPanel: (task: Task) => void;
+}
+
+function QuadrantSection({ quadrant, tasks, onOpenPanel }: QuadrantSectionProps) {
+  const styles = quadrantStyles[quadrant];
+
+  const { setNodeRef, isOver } = useDroppable({
+    id: quadrant,
+    data: { quadrant },
+  });
+
+  const getQuadrantLabel = (q: Quadrant) => {
+    if (q === 'backlog') return 'Backlog';
+    return QUADRANT_INFO[q]?.label || q;
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-lg border ${styles.border} overflow-hidden ${isOver ? 'ring-2 ring-indigo-400' : ''}`}
+    >
+      <div className={`px-4 py-2 ${styles.headerBg}`}>
+        <h3 className={`font-semibold ${styles.text} text-sm`}>
+          {getQuadrantLabel(quadrant)}
+          <span className="ml-2 font-normal opacity-70">
+            ({tasks.length})
+          </span>
+        </h3>
+      </div>
+      <div className={`p-2 ${styles.bg} min-h-[60px]`}>
+        {tasks.length > 0 ? (
+          <div className="space-y-1">
+            {tasks.map((task) => (
+              <TaskLineItem
+                key={task.id}
+                task={task}
+                onOpenPanel={() => onOpenPanel(task)}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400 text-center py-4">Drop tasks here</p>
+        )}
+      </div>
     </div>
   );
 }
 
 export function BacklogPage() {
-  const { tasks, createTask, deleteTask } = useTasks();
+  const { tasks, createTask, updateTask } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -128,8 +197,8 @@ export function BacklogPage() {
 
   const sensors = useSensors(mouseSensor, touchSensor);
 
-  const handleDragStart = (event: { active: { data: { current?: { task?: Task } } } }) => {
-    const task = event.active.data.current?.task;
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = event.active.data.current?.task as Task | undefined;
     if (task) {
       setActiveTask(task);
     }
@@ -142,12 +211,21 @@ export function BacklogPage() {
     if (!over) return;
 
     const taskId = active.id as string;
-    const targetId = over.id as string;
+    const targetQuadrant = over.id as Quadrant;
 
-    // Check if dropped on trash
-    if (targetId === 'trash') {
-      await deleteTask(taskId);
-    }
+    // Check if valid quadrant
+    if (!QUADRANT_ORDER.includes(targetQuadrant)) return;
+
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.quadrant === targetQuadrant) return;
+
+    // Move task to new quadrant
+    await updateTask(taskId, {
+      quadrant: targetQuadrant,
+      // Reset position for matrix quadrants
+      positionX: targetQuadrant !== 'backlog' ? 30 + Math.random() * 20 : null,
+      positionY: targetQuadrant !== 'backlog' ? 30 + Math.random() * 20 : null,
+    });
   };
 
   const handleCreateTask = async () => {
@@ -172,11 +250,6 @@ export function BacklogPage() {
       setIsCreating(false);
       setNewTaskTitle('');
     }
-  };
-
-  const getQuadrantLabel = (quadrant: Quadrant) => {
-    if (quadrant === 'backlog') return 'Backlog';
-    return QUADRANT_INFO[quadrant]?.label || quadrant;
   };
 
   return (
@@ -220,58 +293,23 @@ export function BacklogPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="space-y-6">
-            {QUADRANT_ORDER.map((quadrant) => {
-              const quadrantTasks = tasksByQuadrant[quadrant];
-              if (quadrantTasks.length === 0) return null;
-
-              const styles = quadrantStyles[quadrant];
-
-              return (
-                <div
-                  key={quadrant}
-                  className={`rounded-lg border ${styles.border} overflow-hidden`}
-                >
-                  <div className={`px-4 py-2 ${styles.headerBg}`}>
-                    <h3 className={`font-semibold ${styles.text}`}>
-                      {getQuadrantLabel(quadrant)}
-                      <span className="ml-2 text-sm font-normal opacity-70">
-                        ({quadrantTasks.length})
-                      </span>
-                    </h3>
-                  </div>
-                  <div className={`p-3 ${styles.bg}`}>
-                    <div className="flex flex-wrap gap-2">
-                      {quadrantTasks.map((task) => (
-                        <div key={task.id} className="w-40">
-                          <TaskCard
-                            task={task}
-                            onOpenPanel={() => setSelectedTask(task)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {tasks.length === 0 && !isCreating && (
-              <div className="text-center py-12 text-gray-500">
-                <p>No tasks yet</p>
-                <p className="text-sm mt-1">
-                  Click "Add to Backlog" or double-click on the matrix to create tasks
-                </p>
-              </div>
-            )}
+          <div className="space-y-4">
+            {QUADRANT_ORDER.map((quadrant) => (
+              <QuadrantSection
+                key={quadrant}
+                quadrant={quadrant}
+                tasks={tasksByQuadrant[quadrant]}
+                onOpenPanel={setSelectedTask}
+              />
+            ))}
           </div>
 
-          <TrashDropZone isVisible={activeTask !== null} />
-
-          <DragOverlay>
+          <DragOverlay dropAnimation={null}>
             {activeTask && (
-              <div className="w-40">
-                <TaskCard task={activeTask} onOpenPanel={() => {}} />
+              <div className={`px-3 py-2 rounded shadow-lg ${quadrantStyles[activeTask.quadrant].itemBg}`}>
+                <span className={`text-sm ${quadrantStyles[activeTask.quadrant].text}`}>
+                  {activeTask.title}
+                </span>
               </div>
             )}
           </DragOverlay>
