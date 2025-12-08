@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   DragOverlay,
   MouseSensor,
   TouchSensor,
@@ -26,6 +27,7 @@ export function MatrixPage() {
   const { tasks, updateTask } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const quadrantRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const matrixTasks = tasks.filter((t) => t.quadrant !== 'backlog');
 
@@ -44,7 +46,7 @@ export function MatrixPage() {
 
   const sensors = useSensors(mouseSensor, touchSensor);
 
-  const handleDragStart = (event: { active: { data: { current?: { task?: Task } } } }) => {
+  const handleDragStart = (event: DragStartEvent) => {
     const task = event.active.data.current?.task;
     if (task) {
       setActiveTask(task);
@@ -53,7 +55,7 @@ export function MatrixPage() {
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      const { active, over } = event;
+      const { active, over, delta } = event;
       setActiveTask(null);
 
       if (!over) return;
@@ -66,19 +68,36 @@ export function MatrixPage() {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
-      let posX = task.positionX ?? 20;
-      let posY = task.positionY ?? 20;
+      // Get the quadrant element to calculate percentage position
+      const quadrantEl = quadrantRefs.current.get(targetQuadrant);
+      if (!quadrantEl) return;
 
-      // If moving to a different quadrant, reset position
-      if (task.quadrant !== targetQuadrant) {
-        posX = 20 + Math.random() * 30;
-        posY = 20 + Math.random() * 30;
+      const rect = quadrantEl.getBoundingClientRect();
+
+      let newPosX: number;
+      let newPosY: number;
+
+      if (task.quadrant === targetQuadrant) {
+        // Moving within same quadrant - apply delta to current position
+        const currentX = task.positionX ?? 20;
+        const currentY = task.positionY ?? 20;
+
+        // Convert delta pixels to percentage
+        const deltaXPercent = (delta.x / rect.width) * 100;
+        const deltaYPercent = (delta.y / rect.height) * 100;
+
+        newPosX = Math.max(2, Math.min(85, currentX + deltaXPercent));
+        newPosY = Math.max(2, Math.min(85, currentY + deltaYPercent));
+      } else {
+        // Moving to different quadrant - place in a reasonable position
+        newPosX = 20 + Math.random() * 30;
+        newPosY = 20 + Math.random() * 30;
       }
 
       await updateTask(taskId, {
         quadrant: targetQuadrant,
-        positionX: posX,
-        positionY: posY,
+        positionX: newPosX,
+        positionY: newPosY,
       });
     },
     [tasks, updateTask]
@@ -86,6 +105,14 @@ export function MatrixPage() {
 
   const getQuadrantTasks = (quadrant: Exclude<QuadrantType, 'backlog'>) => {
     return matrixTasks.filter((t) => t.quadrant === quadrant);
+  };
+
+  const registerQuadrantRef = (quadrant: string, el: HTMLDivElement | null) => {
+    if (el) {
+      quadrantRefs.current.set(quadrant, el);
+    } else {
+      quadrantRefs.current.delete(quadrant);
+    }
   };
 
   return (
@@ -124,6 +151,7 @@ export function MatrixPage() {
                 quadrant="do_first"
                 tasks={getQuadrantTasks('do_first')}
                 onTaskClick={setSelectedTask}
+                onRegisterRef={(el) => registerQuadrantRef('do_first', el)}
               />
 
               {/* Top-right: Schedule (Not Urgent & Important) */}
@@ -131,6 +159,7 @@ export function MatrixPage() {
                 quadrant="schedule"
                 tasks={getQuadrantTasks('schedule')}
                 onTaskClick={setSelectedTask}
+                onRegisterRef={(el) => registerQuadrantRef('schedule', el)}
               />
 
               {/* Bottom-left: Delegate (Urgent & Not Important) */}
@@ -138,6 +167,7 @@ export function MatrixPage() {
                 quadrant="delegate"
                 tasks={getQuadrantTasks('delegate')}
                 onTaskClick={setSelectedTask}
+                onRegisterRef={(el) => registerQuadrantRef('delegate', el)}
               />
 
               {/* Bottom-right: Eliminate (Not Urgent & Not Important) */}
@@ -145,6 +175,7 @@ export function MatrixPage() {
                 quadrant="eliminate"
                 tasks={getQuadrantTasks('eliminate')}
                 onTaskClick={setSelectedTask}
+                onRegisterRef={(el) => registerQuadrantRef('eliminate', el)}
               />
             </div>
 
@@ -172,7 +203,7 @@ export function MatrixPage() {
             <TaskCard
               task={activeTask}
               onClick={() => {}}
-              style={{ width: '180px' }}
+              style={{ width: '150px' }}
             />
           )}
         </DragOverlay>

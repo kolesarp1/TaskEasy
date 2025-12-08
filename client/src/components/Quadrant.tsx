@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Task, Quadrant as QuadrantType } from '../types';
 import { QUADRANT_INFO } from '../types';
 import { TaskCard } from './TaskCard';
@@ -9,9 +9,10 @@ interface QuadrantProps {
   quadrant: Exclude<QuadrantType, 'backlog'>;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onRegisterRef?: (el: HTMLDivElement | null) => void;
 }
 
-export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
+export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: QuadrantProps) {
   const { createTask } = useTasks();
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -22,28 +23,37 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
     data: { quadrant },
   });
 
+  // Combine the droppable ref with the parent ref registration
+  const combinedRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      onRegisterRef?.(el);
+    },
+    [setNodeRef, onRegisterRef]
+  );
+
   const info = QUADRANT_INFO[quadrant];
 
   const colorMap: Record<string, { bg: string; label: string; labelBg: string }> = {
     'do-first': {
-      bg: 'bg-red-50',
-      label: 'text-red-700',
-      labelBg: 'bg-red-100/80',
+      bg: 'bg-red-100',
+      label: 'text-red-800',
+      labelBg: 'bg-red-200/80',
     },
     schedule: {
-      bg: 'bg-amber-50',
-      label: 'text-amber-700',
-      labelBg: 'bg-amber-100/80',
+      bg: 'bg-green-100',
+      label: 'text-green-800',
+      labelBg: 'bg-green-200/80',
     },
     delegate: {
-      bg: 'bg-blue-50',
-      label: 'text-blue-700',
-      labelBg: 'bg-blue-100/80',
+      bg: 'bg-purple-100',
+      label: 'text-purple-800',
+      labelBg: 'bg-purple-200/80',
     },
     eliminate: {
-      bg: 'bg-emerald-50',
-      label: 'text-emerald-700',
-      labelBg: 'bg-emerald-100/80',
+      bg: 'bg-amber-100',
+      label: 'text-amber-800',
+      labelBg: 'bg-amber-200/80',
     },
   };
 
@@ -52,7 +62,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Allow creating task when clicking on the quadrant itself
     const target = e.target as HTMLElement;
-    if (target.closest('.task-card') || target.tagName === 'INPUT') return;
+    if (target.closest('.task-card') || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(5, Math.min(85, ((e.clientX - rect.left) / rect.width) * 100));
@@ -90,7 +100,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={combinedRef}
       className={`
         relative h-full overflow-hidden transition-all duration-200
         ${colorClasses.bg}
@@ -98,11 +108,18 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
       `}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Quadrant label - small in corner */}
-      <div className={`absolute top-2 left-2 px-2 py-1 rounded ${colorClasses.labelBg} z-10`}>
-        <span className={`text-xs font-semibold ${colorClasses.label}`}>
-          {info.label}
-        </span>
+      {/* Quadrant label - large watermark style like reference */}
+      <div className="absolute inset-0 flex items-end justify-start p-4 pointer-events-none">
+        <div className={`${colorClasses.label} opacity-20`}>
+          <span className="text-4xl font-black uppercase tracking-tight leading-none">
+            {info.label.split(' ')[0]}
+          </span>
+          {info.label.split(' ')[1] && (
+            <span className="block text-4xl font-black uppercase tracking-tight leading-none">
+              {info.label.split(' ')[1]}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Tasks container */}
@@ -114,7 +131,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
             style={{
               left: `${task.positionX ?? 10}%`,
               top: `${task.positionY ?? 10}%`,
-              maxWidth: 'min(200px, 40%)',
+              maxWidth: 'min(180px, 45%)',
             }}
           >
             <TaskCard task={task} onClick={() => onTaskClick(task)} />
@@ -133,7 +150,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
             <input
               type="text"
               autoFocus
-              className="w-48 px-3 py-2 text-sm border-2 border-indigo-500 rounded-lg shadow-lg focus:outline-none bg-white"
+              className="w-40 px-3 py-2 text-sm border-2 border-indigo-500 rounded shadow-lg focus:outline-none bg-white"
               placeholder="New task..."
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
@@ -147,7 +164,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
       {/* Empty state hint */}
       {tasks.length === 0 && !isCreating && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="text-gray-400 text-sm opacity-50">Double-click to add</p>
+          <p className="text-gray-500 text-sm opacity-60">Double-click to add</p>
         </div>
       )}
     </div>

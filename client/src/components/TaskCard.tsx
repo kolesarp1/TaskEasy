@@ -1,7 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Check, Image } from 'lucide-react';
-import type { Task } from '../types';
+import type { Task, Quadrant } from '../types';
 import { useTasks } from '../context/TaskContext';
 
 interface TaskCardProps {
@@ -10,82 +10,141 @@ interface TaskCardProps {
   style?: React.CSSProperties;
 }
 
+const quadrantColors: Record<Quadrant, { bg: string; border: string; text: string }> = {
+  do_first: {
+    bg: 'bg-red-200',
+    border: 'border-red-300',
+    text: 'text-red-900',
+  },
+  schedule: {
+    bg: 'bg-green-200',
+    border: 'border-green-300',
+    text: 'text-green-900',
+  },
+  delegate: {
+    bg: 'bg-yellow-200',
+    border: 'border-yellow-300',
+    text: 'text-yellow-900',
+  },
+  eliminate: {
+    bg: 'bg-orange-200',
+    border: 'border-orange-300',
+    text: 'text-orange-900',
+  },
+  backlog: {
+    bg: 'bg-gray-100',
+    border: 'border-gray-300',
+    text: 'text-gray-900',
+  },
+};
+
 export function TaskCard({ task, onClick, style }: TaskCardProps) {
-  const { selectedTasks, toggleTaskSelection } = useTasks();
-  const isSelected = selectedTasks.has(task.id);
+  const { updateTask } = useTasks();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { task },
   });
 
+  const colors = quadrantColors[task.quadrant] || quadrantColors.backlog;
+
   const dragStyle = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.8 : 1,
     ...style,
   };
 
-  const handleSelectionClick = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
+    setEditTitle(task.title);
+  }, [task.title]);
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleTaskSelection(task.id);
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== task.title) {
+      await updateTask(task.id, { title: trimmed });
+    } else {
+      setEditTitle(task.title);
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      setEditTitle(task.title);
+      setIsEditing(false);
+    }
+  };
+
+  const handleClick = () => {
+    if (!isEditing) {
+      onClick();
+    }
   };
 
   return (
     <div
       ref={setNodeRef}
       style={dragStyle}
+      {...attributes}
+      {...listeners}
       className={`
-        group bg-white rounded-lg shadow-sm border-2 transition-all cursor-pointer
-        hover:shadow-md
-        ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-transparent'}
-        ${isDragging ? 'shadow-lg z-50' : ''}
+        relative ${colors.bg} ${colors.border} border-2 rounded shadow-sm
+        cursor-grab active:cursor-grabbing select-none
+        hover:shadow-md transition-shadow
+        ${isDragging ? 'shadow-lg z-50 rotate-2' : ''}
       `}
-      onClick={onClick}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     >
-      <div className="p-3">
-        <div className="flex items-start gap-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="mt-0.5 p-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+      <div className="p-2 min-w-[100px]">
+        {isEditing ? (
+          <textarea
+            ref={textareaRef}
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className={`
+              w-full bg-transparent border-none outline-none resize-none
+              text-sm font-medium ${colors.text}
+            `}
+            rows={2}
             onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical size={14} />
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {task.title}
-            </p>
-            {task.description && (
-              <p className="text-xs text-gray-500 truncate mt-0.5">
-                {task.description}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1">
-            {task.screenshots.length > 0 && (
-              <span className="flex items-center gap-0.5 text-gray-400 text-xs">
-                <Image size={12} />
-                {task.screenshots.length}
-              </span>
-            )}
-            <button
-              onClick={handleSelectionClick}
-              className={`
-                w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
-                ${
-                  isSelected
-                    ? 'bg-indigo-500 border-indigo-500 text-white'
-                    : 'border-gray-300 hover:border-gray-400'
-                }
-              `}
-            >
-              {isSelected && <Check size={12} />}
-            </button>
-          </div>
-        </div>
+          />
+        ) : (
+          <p className={`text-sm font-medium ${colors.text} whitespace-pre-wrap break-words`}>
+            {task.title}
+          </p>
+        )}
+        {task.description && !isEditing && (
+          <p className={`text-xs ${colors.text} opacity-70 mt-1 truncate`}>
+            {task.description}
+          </p>
+        )}
+      </div>
+      {/* Resize handle indicator */}
+      <div className={`absolute bottom-0 right-0 w-3 h-3 ${colors.text} opacity-30`}>
+        <svg viewBox="0 0 10 10" className="w-full h-full">
+          <path d="M9 1L1 9M9 5L5 9" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        </svg>
       </div>
     </div>
   );
