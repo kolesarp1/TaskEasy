@@ -133,13 +133,15 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef, activeTa
       {/* Quadrant label - centered like reference image */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className={`${colorClasses.label} text-center`}>
-          {(() => {
-            const Icon = quadrantIcons[quadrant];
-            return <Icon size={48} className="mx-auto mb-2 opacity-30" />;
-          })()}
-          <span className="block text-5xl font-black uppercase tracking-tight leading-none opacity-40">
-            {info.label}
-          </span>
+          <div className="flex items-center justify-center gap-3">
+            {(() => {
+              const Icon = quadrantIcons[quadrant];
+              return <Icon size={40} className="opacity-35" />;
+            })()}
+            <span className="text-5xl font-black uppercase tracking-tight leading-none opacity-40">
+              {info.label}
+            </span>
+          </div>
           <span className="block text-sm font-medium mt-2 opacity-30">
             {info.subtitle}
           </span>
