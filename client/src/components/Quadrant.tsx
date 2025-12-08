@@ -24,20 +24,20 @@ export const quadrantColorMap: Record<string, { bg: string; inputBg: string; lab
     cardBorder: 'border-red-400',
   },
   schedule: {
-    bg: 'bg-cyan-100',
-    inputBg: 'bg-cyan-200',
-    label: 'text-cyan-700',
-    border: 'border-cyan-400',
-    cardBg: 'bg-cyan-200',
-    cardBorder: 'border-cyan-400',
-  },
-  delegate: {
     bg: 'bg-amber-100',
     inputBg: 'bg-amber-200',
     label: 'text-amber-700',
     border: 'border-amber-400',
     cardBg: 'bg-amber-200',
     cardBorder: 'border-amber-400',
+  },
+  delegate: {
+    bg: 'bg-cyan-100',
+    inputBg: 'bg-cyan-200',
+    label: 'text-cyan-700',
+    border: 'border-cyan-400',
+    cardBg: 'bg-cyan-200',
+    cardBorder: 'border-cyan-400',
   },
   eliminate: {
     bg: 'bg-gray-200',

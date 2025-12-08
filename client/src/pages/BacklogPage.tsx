@@ -29,18 +29,18 @@ const quadrantStyles: Record<Quadrant, { bg: string; border: string; text: strin
     itemBg: 'bg-red-100 hover:bg-red-200',
   },
   schedule: {
-    bg: 'bg-cyan-50',
-    border: 'border-cyan-300',
-    text: 'text-cyan-800',
-    headerBg: 'bg-cyan-100',
-    itemBg: 'bg-cyan-100 hover:bg-cyan-200',
-  },
-  delegate: {
     bg: 'bg-amber-50',
     border: 'border-amber-300',
     text: 'text-amber-800',
     headerBg: 'bg-amber-100',
     itemBg: 'bg-amber-100 hover:bg-amber-200',
+  },
+  delegate: {
+    bg: 'bg-cyan-50',
+    border: 'border-cyan-300',
+    text: 'text-cyan-800',
+    headerBg: 'bg-cyan-100',
+    itemBg: 'bg-cyan-100 hover:bg-cyan-200',
   },
   eliminate: {
     bg: 'bg-gray-100',

@@ -18,14 +18,14 @@ const quadrantColors: Record<Quadrant, { bg: string; border: string; text: strin
     text: 'text-red-900',
   },
   schedule: {
-    bg: 'bg-cyan-200',
-    border: 'border-cyan-400',
-    text: 'text-cyan-900',
-  },
-  delegate: {
     bg: 'bg-amber-200',
     border: 'border-amber-400',
     text: 'text-amber-900',
+  },
+  delegate: {
+    bg: 'bg-cyan-200',
+    border: 'border-cyan-400',
+    text: 'text-cyan-900',
   },
   eliminate: {
     bg: 'bg-gray-300',
