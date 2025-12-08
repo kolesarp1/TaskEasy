@@ -1,11 +1,14 @@
-import { Outlet, NavLink, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTasks } from '../context/TaskContext';
-import { LayoutGrid, List, LogOut, Merge, AlertCircle } from 'lucide-react';
+import { LayoutGrid, List, LogOut, Merge, Menu, X, User, AlertCircle } from 'lucide-react';
 
 export function Layout() {
   const { user, isGuest, signOut } = useAuth();
   const { selectedTasks, mergeTasks, clearSelection, tasks } = useTasks();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   const handleMerge = async () => {
     if (selectedTasks.size < 2) return;
@@ -13,107 +16,153 @@ export function Layout() {
     await mergeTasks(taskIds);
   };
 
+  const isMatrixPage = location.pathname === '/';
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold text-gray-900">TaskCanvas</h1>
-            <nav className="flex gap-1">
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`
-                }
-              >
-                <LayoutGrid size={18} />
-                Matrix
-              </NavLink>
-              <NavLink
-                to="/backlog"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`
-                }
-              >
-                <List size={18} />
-                Backlog
-              </NavLink>
-            </nav>
+    <div className="h-screen w-screen overflow-hidden relative">
+      {/* Floating corner menu button */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        {/* Merge controls when tasks selected */}
+        {selectedTasks.size >= 2 && (
+          <div className="flex items-center gap-2 bg-white rounded-lg shadow-lg px-3 py-2 mr-2">
+            <span className="text-sm text-gray-600">
+              {selectedTasks.size} selected
+            </span>
+            <button
+              onClick={handleMerge}
+              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              <Merge size={16} />
+              Merge
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-2 py-1.5 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors"
+            >
+              <X size={16} />
+            </button>
           </div>
+        )}
 
-          <div className="flex items-center gap-4">
-            {selectedTasks.size >= 2 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  {selectedTasks.size} selected
-                </span>
-                <button
-                  onClick={handleMerge}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-                >
-                  <Merge size={16} />
-                  Merge
-                </button>
-                <button
-                  onClick={clearSelection}
-                  className="px-3 py-1.5 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
+        {/* Menu button */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </div>
+
+      {/* Dropdown menu */}
+      {menuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="fixed top-16 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-2 w-56">
+            <div className="px-4 py-2 border-b border-gray-100">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Navigation</p>
+            </div>
+            <NavLink
+              to="/"
+              end
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`
+              }
+            >
+              <LayoutGrid size={18} />
+              Matrix View
+            </NavLink>
+            <NavLink
+              to="/backlog"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`
+              }
+            >
+              <List size={18} />
+              Backlog
+            </NavLink>
+
+            <div className="border-t border-gray-100 mt-2 pt-2">
+              <div className="px-4 py-2">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Account</p>
               </div>
-            )}
-
-            {user ? (
-              <>
-                <span className="text-sm text-gray-600">{user.email}</span>
-                <button
-                  onClick={signOut}
-                  className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors"
-                  title="Sign out"
+              {user ? (
+                <>
+                  <div className="px-4 py-2 flex items-center gap-3 text-sm text-gray-600">
+                    <User size={18} />
+                    <span className="truncate">{user.email}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                  >
+                    <LogOut size={18} />
+                    Sign out
+                  </button>
+                </>
+              ) : isGuest ? (
+                <Link
+                  to="/auth"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
                 >
-                  <LogOut size={18} />
-                </button>
-              </>
-            ) : isGuest ? (
-              <Link
-                to="/auth"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Sign up to save
-              </Link>
-            ) : null}
+                  <User size={18} />
+                  Sign up to save
+                </Link>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </header>
+        </>
+      )}
 
-      {isGuest && !user && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
-          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm text-amber-800">
+      {/* Guest mode banner - only show on non-matrix pages or as a subtle indicator */}
+      {isGuest && !user && !isMatrixPage && (
+        <div className="fixed top-0 left-0 right-0 bg-amber-50 border-b border-amber-200 px-4 py-2 z-30">
+          <div className="flex items-center justify-center gap-2 text-sm text-amber-800">
             <AlertCircle size={16} />
             <span>
-              You're using TaskCanvas as a guest.{' '}
+              Guest mode.{' '}
               {tasks.length > 0 && (
-                <span className="font-medium">You have {tasks.length} task{tasks.length !== 1 ? 's' : ''} stored locally. </span>
+                <span className="font-medium">{tasks.length} task{tasks.length !== 1 ? 's' : ''} stored locally. </span>
               )}
               <Link to="/auth" className="underline font-medium hover:text-amber-900">
                 Sign up
               </Link>{' '}
-              to save your tasks permanently.
+              to save permanently.
             </span>
           </div>
         </div>
       )}
 
-      <main className="flex-1 overflow-hidden">
+      {/* Guest indicator dot on matrix page */}
+      {isGuest && !user && isMatrixPage && (
+        <div className="fixed top-4 left-4 z-50">
+          <Link
+            to="/auth"
+            className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+          >
+            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+            Guest Mode
+          </Link>
+        </div>
+      )}
+
+      <main className="h-full w-full">
         <Outlet />
       </main>
     </div>

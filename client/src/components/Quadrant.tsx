@@ -24,41 +24,39 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
 
   const info = QUADRANT_INFO[quadrant];
 
-  const colorMap: Record<string, { bg: string; border: string; headerBg: string; text: string }> = {
+  const colorMap: Record<string, { bg: string; label: string; labelBg: string }> = {
     'do-first': {
       bg: 'bg-red-50',
-      border: 'border-red-200',
-      headerBg: 'bg-red-100',
-      text: 'text-red-800',
+      label: 'text-red-700',
+      labelBg: 'bg-red-100/80',
     },
     schedule: {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
-      headerBg: 'bg-yellow-100',
-      text: 'text-yellow-800',
+      bg: 'bg-amber-50',
+      label: 'text-amber-700',
+      labelBg: 'bg-amber-100/80',
     },
     delegate: {
       bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      headerBg: 'bg-blue-100',
-      text: 'text-blue-800',
+      label: 'text-blue-700',
+      labelBg: 'bg-blue-100/80',
     },
     eliminate: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      headerBg: 'bg-green-100',
-      text: 'text-green-800',
+      bg: 'bg-emerald-50',
+      label: 'text-emerald-700',
+      labelBg: 'bg-emerald-100/80',
     },
   };
 
   const colorClasses = colorMap[info.color] ?? colorMap['do-first'];
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
+    // Allow creating task when clicking on the quadrant itself
+    const target = e.target as HTMLElement;
+    if (target.closest('.task-card') || target.tagName === 'INPUT') return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const x = Math.max(5, Math.min(85, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(5, Math.min(85, ((e.clientY - rect.top) / rect.height) * 100));
 
     setCreatePosition({ x, y });
     setIsCreating(true);
@@ -94,30 +92,29 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
     <div
       ref={setNodeRef}
       className={`
-        relative flex flex-col rounded-lg border-2 overflow-hidden transition-colors
-        ${colorClasses.bg} ${colorClasses.border}
-        ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2' : ''}
+        relative h-full overflow-hidden transition-all duration-200
+        ${colorClasses.bg}
+        ${isOver ? 'ring-4 ring-inset ring-indigo-400/50' : ''}
       `}
+      onDoubleClick={handleDoubleClick}
     >
-      <div className={`px-3 py-2 ${colorClasses.headerBg}`}>
-        <h3 className={`font-semibold ${colorClasses.text}`}>{info.label}</h3>
-        <p className={`text-xs ${colorClasses.text} opacity-75`}>
-          {info.description}
-        </p>
+      {/* Quadrant label - small in corner */}
+      <div className={`absolute top-2 left-2 px-2 py-1 rounded ${colorClasses.labelBg} z-10`}>
+        <span className={`text-xs font-semibold ${colorClasses.label}`}>
+          {info.label}
+        </span>
       </div>
 
-      <div
-        className="flex-1 relative p-2 min-h-[200px]"
-        onDoubleClick={handleDoubleClick}
-      >
+      {/* Tasks container */}
+      <div className="absolute inset-0">
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="absolute"
+            className="absolute task-card"
             style={{
               left: `${task.positionX ?? 10}%`,
               top: `${task.positionY ?? 10}%`,
-              maxWidth: '200px',
+              maxWidth: 'min(200px, 40%)',
             }}
           >
             <TaskCard task={task} onClick={() => onTaskClick(task)} />
@@ -130,13 +127,14 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
             style={{
               left: `${createPosition.x}%`,
               top: `${createPosition.y}%`,
+              transform: 'translate(-10px, -10px)',
             }}
           >
             <input
               type="text"
               autoFocus
-              className="w-48 px-3 py-2 text-sm border-2 border-indigo-500 rounded-lg shadow-lg focus:outline-none"
-              placeholder="Task title..."
+              className="w-48 px-3 py-2 text-sm border-2 border-indigo-500 rounded-lg shadow-lg focus:outline-none bg-white"
+              placeholder="New task..."
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onBlur={handleCreateTask}
@@ -144,13 +142,14 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
             />
           </div>
         )}
-
-        {tasks.length === 0 && !isCreating && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-gray-400 text-sm">Double-click to add task</p>
-          </div>
-        )}
       </div>
+
+      {/* Empty state hint */}
+      {tasks.length === 0 && !isCreating && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <p className="text-gray-400 text-sm opacity-50">Double-click to add</p>
+        </div>
+      )}
     </div>
   );
 }

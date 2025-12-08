@@ -106,7 +106,7 @@ export function BacklogPage() {
   };
 
   return (
-    <div className="h-full p-4">
+    <div className="h-full p-6 pt-16 overflow-auto bg-gray-50">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>

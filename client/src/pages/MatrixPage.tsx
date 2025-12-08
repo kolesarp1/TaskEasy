@@ -89,66 +89,81 @@ export function MatrixPage() {
   };
 
   return (
-    <div className="h-full p-4">
+    <div className="h-full w-full relative bg-gray-100">
       <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="h-full max-w-6xl mx-auto">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span className="font-medium text-gray-700">URGENT</span>
-              <span className="text-gray-400">|</span>
-              <span>NOT URGENT</span>
-            </div>
+        {/* Main container with axis labels */}
+        <div className="h-full w-full flex">
+          {/* Left axis label - IMPORTANT */}
+          <div className="w-8 flex-shrink-0 flex items-center justify-center">
+            <span
+              className="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap"
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+            >
+              Important
+            </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 h-[calc(100%-3rem)]">
-            <div className="flex flex-col gap-4">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Important
-              </div>
+          {/* Main content area */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Top axis label - URGENT */}
+            <div className="h-8 flex-shrink-0 flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                Urgent
+              </span>
+            </div>
+
+            {/* Matrix grid */}
+            <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-1 min-h-0">
+              {/* Top-left: Do First (Urgent & Important) */}
               <Quadrant
                 quadrant="do_first"
                 tasks={getQuadrantTasks('do_first')}
                 onTaskClick={setSelectedTask}
               />
-            </div>
 
-            <div className="flex flex-col gap-4">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide opacity-0">
-                Important
-              </div>
+              {/* Top-right: Schedule (Not Urgent & Important) */}
               <Quadrant
                 quadrant="schedule"
                 tasks={getQuadrantTasks('schedule')}
                 onTaskClick={setSelectedTask}
               />
-            </div>
 
-            <div className="flex flex-col gap-4">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Not Important
-              </div>
+              {/* Bottom-left: Delegate (Urgent & Not Important) */}
               <Quadrant
                 quadrant="delegate"
                 tasks={getQuadrantTasks('delegate')}
                 onTaskClick={setSelectedTask}
               />
-            </div>
 
-            <div className="flex flex-col gap-4">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide opacity-0">
-                Not Important
-              </div>
+              {/* Bottom-right: Eliminate (Not Urgent & Not Important) */}
               <Quadrant
                 quadrant="eliminate"
                 tasks={getQuadrantTasks('eliminate')}
                 onTaskClick={setSelectedTask}
               />
             </div>
+
+            {/* Bottom axis label - NOT URGENT */}
+            <div className="h-8 flex-shrink-0 flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                Not Urgent
+              </span>
+            </div>
+          </div>
+
+          {/* Right axis label - NOT IMPORTANT */}
+          <div className="w-8 flex-shrink-0 flex items-center justify-center">
+            <span
+              className="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap"
+              style={{ writingMode: 'vertical-rl' }}
+            >
+              Not Important
+            </span>
           </div>
         </div>
 
