@@ -12,16 +12,29 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    credentials: 'include',
-  });
+  let res: Response;
 
-  const data = await res.json();
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+    });
+  } catch (error) {
+    throw new ApiError(0, 'Network error. Please check your connection.');
+  }
+
+  let data: T & { error?: string };
+
+  try {
+    const text = await res.text();
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new ApiError(res.status, 'Invalid response from server');
+  }
 
   if (!res.ok) {
     throw new ApiError(res.status, data.error || 'Something went wrong');
@@ -103,13 +116,26 @@ export const screenshotsApi = {
     const formData = new FormData();
     formData.append('screenshot', file);
 
-    const res = await fetch(`${API_BASE}/screenshots/task/${taskId}`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-    });
+    let res: Response;
 
-    const data = await res.json();
+    try {
+      res = await fetch(`${API_BASE}/screenshots/task/${taskId}`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+    } catch {
+      throw new ApiError(0, 'Network error. Please check your connection.');
+    }
+
+    let data: { screenshot: Screenshot; error?: string };
+
+    try {
+      const text = await res.text();
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      throw new ApiError(res.status, 'Invalid response from server');
+    }
 
     if (!res.ok) {
       throw new ApiError(res.status, data.error || 'Upload failed');
