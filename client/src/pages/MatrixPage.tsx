@@ -173,16 +173,6 @@ export function MatrixPage() {
     }
   };
 
-  const handleDragMove = (event: { activatorEvent: Event }) => {
-    // Update mouse position during drag
-    if (event.activatorEvent && 'clientX' in event.activatorEvent) {
-      lastMousePos.current = {
-        x: (event.activatorEvent as MouseEvent).clientX,
-        y: (event.activatorEvent as MouseEvent).clientY,
-      };
-    }
-  };
-
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over, delta } = event;
