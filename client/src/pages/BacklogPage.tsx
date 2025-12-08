@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -152,11 +152,62 @@ function QuadrantSection({ quadrant, tasks, onOpenPanel }: QuadrantSectionProps)
 }
 
 export function BacklogPage() {
-  const { tasks, createTask, updateTask } = useTasks();
+  const { tasks, createTask, updateTask, uploadScreenshot } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  // Handle paste to create new task
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Don't handle if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      const clipboardData = e.clipboardData;
+      if (!clipboardData) return;
+
+      // Check for images first
+      const items = clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            // Create task with generic title in Schedule quadrant
+            const task = await createTask({
+              title: 'Pasted image',
+              quadrant: 'schedule',
+              positionX: 30 + Math.random() * 20,
+              positionY: 30 + Math.random() * 20,
+            });
+            await uploadScreenshot(task.id, file);
+            setSelectedTask(task);
+          }
+          return;
+        }
+      }
+
+      // Check for text
+      const text = clipboardData.getData('text/plain');
+      if (text && text.trim()) {
+        e.preventDefault();
+        const title = text.trim().slice(0, 200); // Limit title length
+        const task = await createTask({
+          title,
+          quadrant: 'schedule',
+          positionX: 30 + Math.random() * 20,
+          positionY: 30 + Math.random() * 20,
+        });
+        setSelectedTask(task);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [createTask, uploadScreenshot]);
 
   const tasksByQuadrant = useMemo(() => {
     const grouped: Record<Quadrant, Task[]> = {

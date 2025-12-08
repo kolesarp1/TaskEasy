@@ -8,6 +8,7 @@ interface TaskCardProps {
   task: Task;
   onOpenPanel: () => void;
   style?: React.CSSProperties;
+  isDragOverlay?: boolean;
 }
 
 const quadrantColors: Record<Quadrant, { bg: string; border: string; text: string }> = {
@@ -38,7 +39,7 @@ const quadrantColors: Record<Quadrant, { bg: string; border: string; text: strin
   },
 };
 
-export function TaskCard({ task, onOpenPanel, style }: TaskCardProps) {
+export function TaskCard({ task, onOpenPanel, style, isDragOverlay }: TaskCardProps) {
   const { updateTask } = useTasks();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
@@ -47,15 +48,18 @@ export function TaskCard({ task, onOpenPanel, style }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { task },
+    disabled: isDragOverlay,
   });
 
   const colors = quadrantColors[task.quadrant] || quadrantColors.backlog;
 
-  const dragStyle = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.8 : 1,
-    ...style,
-  };
+  const dragStyle = isDragOverlay
+    ? { ...style }
+    : {
+        transform: CSS.Translate.toString(transform),
+        opacity: isDragging ? 0.8 : 1,
+        ...style,
+      };
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -105,18 +109,18 @@ export function TaskCard({ task, onOpenPanel, style }: TaskCardProps) {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={isDragOverlay ? undefined : setNodeRef}
       style={dragStyle}
-      {...attributes}
-      {...listeners}
+      {...(isDragOverlay ? {} : attributes)}
+      {...(isDragOverlay ? {} : listeners)}
       className={`
         relative ${colors.bg} ${colors.border} border-2 rounded shadow-sm
-        cursor-grab active:cursor-grabbing select-none
-        hover:shadow-md transition-shadow
-        ${isDragging ? 'shadow-lg z-50 rotate-2' : ''}
+        ${isDragOverlay ? 'cursor-grabbing shadow-lg rotate-2' : 'cursor-grab active:cursor-grabbing'}
+        select-none hover:shadow-md transition-all
+        ${isDragging && !isDragOverlay ? 'shadow-lg z-50 rotate-2' : ''}
       `}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
+      onClick={isDragOverlay ? undefined : handleClick}
+      onDoubleClick={isDragOverlay ? undefined : handleDoubleClick}
     >
       <div className="p-2 min-w-[100px]">
         {isEditing ? (

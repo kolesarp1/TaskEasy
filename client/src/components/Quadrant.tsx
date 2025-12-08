@@ -10,6 +10,7 @@ interface QuadrantProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   onRegisterRef?: (el: HTMLDivElement | null) => void;
+  activeTaskId?: string;
 }
 
 // Shared color map for quadrants - export for use in other components
@@ -48,7 +49,7 @@ export const quadrantColorMap: Record<string, { bg: string; inputBg: string; lab
   },
 };
 
-export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: QuadrantProps) {
+export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef, activeTaskId }: QuadrantProps) {
   const { createTask } = useTasks();
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -142,6 +143,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick, onRegisterRef }: Quadra
               left: `${task.positionX ?? 10}%`,
               top: `${task.positionY ?? 10}%`,
               maxWidth: 'min(180px, 45%)',
+              opacity: task.id === activeTaskId ? 0 : 1,
             }}
           >
             <TaskCard task={task} onOpenPanel={() => onTaskClick(task)} />
