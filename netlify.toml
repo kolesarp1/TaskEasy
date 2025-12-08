@@ -1,20 +1,9 @@
 [build]
   publish = "client/dist"
-  command = "cd client && npm install && npm run build && cd ../netlify/functions && npm install && npx prisma generate"
+  command = "cd client && npm install && npm run build && cd ../netlify/functions && npm install"
 
 [functions]
-  node_bundler = "esbuild"
   directory = "netlify/functions"
-  external_node_modules = ["@prisma/client", "prisma"]
-
-[functions."auth"]
-  external_node_modules = ["@prisma/client", "prisma"]
-
-[functions."tasks"]
-  external_node_modules = ["@prisma/client", "prisma"]
-
-[functions."screenshots"]
-  external_node_modules = ["@prisma/client", "prisma"]
 
 [[redirects]]
   from = "/api/auth/*"
