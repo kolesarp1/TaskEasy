@@ -66,10 +66,6 @@ export function MatrixPage() {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
-      // Calculate drop position within the quadrant
-      const overElement = document.getElementById(targetQuadrant) ||
-        document.querySelector(`[data-quadrant="${targetQuadrant}"]`);
-
       let posX = task.positionX ?? 20;
       let posY = task.positionY ?? 20;
 

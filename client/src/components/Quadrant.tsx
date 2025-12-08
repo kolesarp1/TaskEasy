@@ -24,7 +24,7 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
 
   const info = QUADRANT_INFO[quadrant];
 
-  const colorClasses = {
+  const colorMap: Record<string, { bg: string; border: string; headerBg: string; text: string }> = {
     'do-first': {
       bg: 'bg-red-50',
       border: 'border-red-200',
@@ -49,7 +49,9 @@ export function Quadrant({ quadrant, tasks, onTaskClick }: QuadrantProps) {
       headerBg: 'bg-green-100',
       text: 'text-green-800',
     },
-  }[info.color];
+  };
+
+  const colorClasses = colorMap[info.color] ?? colorMap['do-first'];
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;

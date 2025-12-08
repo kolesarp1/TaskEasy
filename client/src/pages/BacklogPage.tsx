@@ -17,7 +17,6 @@ import { Plus, ArrowUpDown } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 import { BacklogTaskItem } from '../components/BacklogTaskItem';
 import { TaskDetailPanel } from '../components/TaskDetailPanel';
-import { TaskCard } from '../components/TaskCard';
 import type { Task } from '../types';
 
 type SortOption = 'created' | 'title' | 'updated';
@@ -68,7 +67,7 @@ export function BacklogPage() {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = async (_event: DragEndEvent) => {
     setActiveTask(null);
     // Sorting within backlog doesn't need persistence
     // Tasks are sorted by the selected sort option
