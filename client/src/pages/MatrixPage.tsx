@@ -12,7 +12,7 @@ import {
   pointerWithin,
   useDroppable,
 } from '@dnd-kit/core';
-import { Trash2 } from 'lucide-react';
+import { Trash2, CheckCircle2 } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 import { Quadrant } from '../components/Quadrant';
 import { TaskCard } from '../components/TaskCard';
@@ -26,27 +26,65 @@ const QUADRANTS: Exclude<QuadrantType, 'backlog'>[] = [
   'eliminate',
 ];
 
-function TrashDropZone({ isOver }: { isOver: boolean }) {
+function DoneDropZone({ isOver, isDragging }: { isOver: boolean; isDragging: boolean }) {
   return (
     <div
       className={`
-        flex items-center gap-2 px-6 py-3 rounded-full
-        transition-all duration-200 shadow-lg
+        flex items-center gap-2 px-4 py-2 rounded-full
+        transition-all duration-200
+        ${isDragging ? 'opacity-100' : 'opacity-60'}
         ${isOver
-          ? 'bg-red-500 text-white scale-110'
-          : 'bg-gray-800 text-gray-300'
+          ? 'bg-green-500 text-white scale-110 shadow-lg'
+          : 'bg-green-100 text-green-700 border-2 border-green-300'
         }
       `}
     >
-      <Trash2 size={20} />
+      <CheckCircle2 size={18} />
       <span className="text-sm font-medium">
-        {isOver ? 'Release to delete' : 'Drop here to delete'}
+        {isOver ? 'Release to complete' : 'Done'}
       </span>
     </div>
   );
 }
 
-function TrashDroppable({ children }: { children: (isOver: boolean) => React.ReactNode }) {
+function TrashDropZone({ isOver, isDragging }: { isOver: boolean; isDragging: boolean }) {
+  return (
+    <div
+      className={`
+        flex items-center gap-2 px-4 py-2 rounded-full
+        transition-all duration-200
+        ${isDragging ? 'opacity-100' : 'opacity-60'}
+        ${isOver
+          ? 'bg-red-500 text-white scale-110 shadow-lg'
+          : 'bg-red-100 text-red-700 border-2 border-red-300'
+        }
+      `}
+    >
+      <Trash2 size={18} />
+      <span className="text-sm font-medium">
+        {isOver ? 'Release to delete' : 'Delete'}
+      </span>
+    </div>
+  );
+}
+
+function DoneDroppable({ children, isDragging }: { children: (isOver: boolean) => React.ReactNode; isDragging: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'done',
+    data: { type: 'done' },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`fixed top-4 left-4 z-40 transition-opacity ${isDragging ? 'pointer-events-auto' : 'pointer-events-none'}`}
+    >
+      {children(isOver)}
+    </div>
+  );
+}
+
+function TrashDroppable({ children, isDragging }: { children: (isOver: boolean) => React.ReactNode; isDragging: boolean }) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'trash',
     data: { type: 'trash' },
@@ -55,7 +93,7 @@ function TrashDroppable({ children }: { children: (isOver: boolean) => React.Rea
   return (
     <div
       ref={setNodeRef}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 p-4"
+      className={`fixed bottom-4 right-4 z-40 transition-opacity ${isDragging ? 'pointer-events-auto' : 'pointer-events-none'}`}
     >
       {children(isOver)}
     </div>
@@ -66,7 +104,7 @@ export function MatrixPage() {
   const { tasks, updateTask, deleteTask, createTask, uploadScreenshot } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [showTrash, setShowTrash] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [hoverQuadrant, setHoverQuadrant] = useState<QuadrantType | null>(null);
   const quadrantRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const dragStartInfo = useRef<{ taskId: string; startX: number; startY: number } | null>(null);
@@ -144,7 +182,7 @@ export function MatrixPage() {
     const task = event.active.data.current?.task as Task | undefined;
     if (task) {
       setActiveTask(task);
-      setShowTrash(true);
+      setIsDragging(true);
       setHoverQuadrant(task.quadrant);
       dragStartInfo.current = {
         taskId: task.id,
@@ -169,7 +207,7 @@ export function MatrixPage() {
       const overId = over.id as string;
       if (QUADRANTS.includes(overId as Exclude<QuadrantType, 'backlog'>)) {
         setHoverQuadrant(overId as QuadrantType);
-      } else if (overId === 'trash') {
+      } else if (overId === 'trash' || overId === 'done') {
         setHoverQuadrant(null);
       }
     }
@@ -179,7 +217,7 @@ export function MatrixPage() {
     async (event: DragEndEvent) => {
       const { active, over, delta } = event;
       setActiveTask(null);
-      setShowTrash(false);
+      setIsDragging(false);
       setHoverQuadrant(null);
 
       if (!over) {
@@ -191,8 +229,8 @@ export function MatrixPage() {
       const taskId = active.id as string;
       const targetId = over.id as string;
 
-      // Check if dropped on trash
-      if (targetId === 'trash') {
+      // Check if dropped on trash or done
+      if (targetId === 'trash' || targetId === 'done') {
         await deleteTask(taskId);
         dragStartInfo.current = null;
         lastMousePos.current = null;
@@ -369,22 +407,23 @@ export function MatrixPage() {
           <div className="h-6 flex-shrink-0" />
         </div>
 
-        {/* Trash drop zone - only visible when dragging */}
-        {showTrash && (
-          <TrashDroppable>
-            {(isOver) => <TrashDropZone isOver={isOver} />}
-          </TrashDroppable>
-        )}
+        {/* Done drop zone - top left, always visible */}
+        <DoneDroppable isDragging={isDragging}>
+          {(isOver) => <DoneDropZone isOver={isOver} isDragging={isDragging} />}
+        </DoneDroppable>
+
+        {/* Trash drop zone - bottom right, always visible */}
+        <TrashDroppable isDragging={isDragging}>
+          {(isOver) => <TrashDropZone isOver={isOver} isDragging={isDragging} />}
+        </TrashDroppable>
 
         <DragOverlay dropAnimation={null}>
           {activeTask && (
-            <div className="w-[140px]">
-              <TaskCard
-                task={hoverQuadrant ? { ...activeTask, quadrant: hoverQuadrant } : activeTask}
-                onOpenPanel={() => {}}
-                isDragOverlay
-              />
-            </div>
+            <TaskCard
+              task={hoverQuadrant ? { ...activeTask, quadrant: hoverQuadrant } : activeTask}
+              onOpenPanel={() => {}}
+              isDragOverlay
+            />
           )}
         </DragOverlay>
       </DndContext>
