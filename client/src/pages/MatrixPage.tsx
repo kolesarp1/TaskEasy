@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import {
   DndContext,
   DragEndEvent,
@@ -220,7 +221,11 @@ export function MatrixPage() {
       setHoverQuadrant(null);
 
       const cleanup = () => {
-        setActiveTask(null);
+        // Use flushSync to ensure activeTask is cleared synchronously
+        // This prevents flicker by ensuring the original card is visible immediately
+        flushSync(() => {
+          setActiveTask(null);
+        });
         dragStartInfo.current = null;
         lastMousePos.current = null;
       };
@@ -298,10 +303,8 @@ export function MatrixPage() {
         positionY: newPosY,
       });
 
-      // Single RAF to wait for the DOM paint after the synchronous state update
-      requestAnimationFrame(() => {
-        cleanup();
-      });
+      // cleanup also uses flushSync, so both updates happen synchronously
+      cleanup();
     },
     [tasks, updateTask, deleteTask, completeTask]
   );
